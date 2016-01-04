@@ -14,10 +14,10 @@ not conflict with other ChiliPeppr widgets.
 | ID                    | com-chilipeppr-widget-eagle |
 | Name                  | Widget / Eagle BRD v4 |
 | Description           | This widget lets you drag in an Eagle PCB ".brd" file to mill. |
-| chilipeppr.load() URL | http://raw.githubusercontent.com/raykholo/widget-eagle/master/auto-generated-widget.html |
-| Edit URL              | http://ide.c9.io/raykholo/widget-eagle |
-| Github URL            | http://github.com/raykholo/widget-eagle |
-| Test URL              | https://preview.c9users.io/raykholo/widget-eagle/widget.html |
+| chilipeppr.load() URL | http://raw.githubusercontent.com/raykholo/widget-stlViewer3/master/auto-generated-widget.html |
+| Edit URL              | http://ide.c9.io/raykholo/widget-stlviewer3 |
+| Github URL            | http://github.com/raykholo/widget-stlViewer3 |
+| Test URL              | https://preview.c9users.io/raykholo/widget-stlviewer3/widget.html |
 
 ## Example Code for chilipeppr.load() Statement
 
@@ -30,7 +30,7 @@ back the instance of it.
 ```javascript
 chilipeppr.load(
   "#myDivWidgetInsertedInto",
-  "http://raw.githubusercontent.com/raykholo/widget-eagle/master/auto-generated-widget.html",
+  "http://raw.githubusercontent.com/raykholo/widget-stlViewer3/master/auto-generated-widget.html",
   function() {
     // Callback after widget loaded into #myDivWidgetInsertedInto
     cprequire(
@@ -161,171 +161,6 @@ To better understand how ChiliPeppr's publish() method works see amplify.js's do
 
 The table below shows, in order, the methods and properties inside the widget/element.
 
-<<<<<<< HEAD
-| Item                  | Type          | Description |
-| -------------         | ------------- | ----------- |
-| id | string | "com-chilipeppr-widget-eagle"<br><br>The ID of the widget. You must define this and make it unique. |
-| name | string | "Widget / Eagle PCB v3" |
-| desc | string | "This widget lets you drag in an Eagle PCB \".brd\" file to mill." |
-| url | string | "http://raw.githubusercontent.com/raykholo/widget-eagle/master/auto-generated-widget.html" |
-| fiddleurl | string | "http://ide.c9.io/raykholo/widget-eagle" |
-| githuburl | string | "http://github.com/raykholo/widget-eagle" |
-| testurl | string | "http://widget-eagle-raykholo.c9users.io/widget.html" |
-| publish | object | Please see docs above.<br><br>Define the publish signals that this widget/element owns or defines so thatother widgets know how to subscribe to them and what they do. |
-| subscribe | object | Please see docs above.<br><br>Define the subscribe signals that this widget/element owns or defines so thatother widgets know how to subscribe to them and what they do. |
-| foreignPublish | object | Please see docs above.<br><br>Document the foreign publish signals, i.e. signals owned by other widgetsor elements, that this widget/element publishes to. |
-| foreignSubscribe | object | Please see docs above.<br><br>Document the foreign subscribe signals, i.e. signals owned by other widgetsor elements, that this widget/element subscribes to. |
-| init | function | function (doMyOwnDragDrop) <br><br>All widgets should have an init method. It should be run by theinstantiating code like a workspace or a different widget. |
-| setupLayerToggleDropdown | function | function ()  |
-| populateLayerToggleDropdown | function | function () |
-| onChangeLayerToggleDropdown | function | function ()  |
-| setupFeedsDepths | function | function ()  |
-| calcPasses | function | function (el)  |
-| activateWidget | function | function () <br><br>This method is called from the main workspace telling us the userjust activated us as a widget. This is not the same as load. Loadhappens once. Activate happens many times if user closes then opensus. |
-| unactivateWidget | function | function ()  |
-| init3d | function | function () <br><br>Try to get a reference to the 3D viewer. |
-| onInit3dSuccess | function | function ()  |
-| obj3d | object |  |
-| obj3dmeta | object |  |
-| userCallbackForGet3dObj | object |  |
-| get3dObj | function | function (callback)  |
-| get3dObjCallback | function | function (data, meta)  |
-| is3dViewerReady | boolean |  |
-| clear3dViewer | function | function ()  |
-| clearEagleBrd | function | function ()  |
-| clearEagleBrdStep2 | function | function ()  |
-| setupGcodeTab | function | function ()  |
-| sendGcodeToWorkspace | function | function ()  |
-| setupDragDrop | function | function ()  |
-| eagle | object |  |
-| open | function | function (data, info)  |
-| draw3d | function | function (callback) <br><br>We need the 3D viewer to be ready to go for us to generate our 3D view,so do a little bit of a wait sequence here where we try 3 times tograb the 3D viewer object and then we can render our board.Alternately, we could render our board and then inject into the 3Dviewer later. Not sure why I didn't do it that way initially. |
-| colorSignal | number |  |
-| colorSmd | number |  |
-| colorSignalBottom | number |  |
-| colorSmdBottom | number |  |
-| colorVia | number |  |
-| colorPad | number |  |
-| colorMill | number |  |
-| colorHole | number |  |
-| colorsDrop | object |  |
-| colorDimension | number |  |
-| opacitySignal | number |  |
-| opacityDimension | number |  |
-| opacityVia | number |  |
-| opacityPad | number |  |
-| endmillSize | number |  |
-| actualEndmill | number |  |
-| inflateMillPathBy | object |  |
-| paths | object |  |
-| pathsUnion | object |  |
-| pathsUnionHoles | object |  |
-| threeDimensions | object |  |
-| activeLayer | string | "Top" |
-| clipperDimensions | object |  |
-| onDraw3dReady | function | function () <br><br>This is a key method that will actually start the traversal of theentire Eagle BRD and generate Three.js objects for each pad/smd/via/wire, etc.Then it will generate Clipper Paths which are just 2d xy values in theformat that the Clipper library wants so we can do unions and diffswhich is important to generate the isolation paths as well as deal withpolygons that may be on the board representing signal planes like a GND plane. |
-| onDraw3dReadyAfter | function | function ()  |
-| clearanceHeight | number |  |
-| depthOfSignalMilling | number |  |
-| feedRatePlunge | number |  |
-| feedRateSignals | number |  |
-| feedRateDimensions | number |  |
-| drillFeedrate | number |  |
-| drillMaxDiameter | number |  |
-| drillDepth | number |  |
-| depthOfDimensions | number |  |
-| millDiameter | number |  |
-| stepDownDimensions | number |  |
-| stepDownPasses | number |  |
-| generateGcodeHole | function | function (diameter, x, y) |
-| exportGcodeHeader | function | function () |
-| exportGcodeMilling | function | function () |
-| exportGcodeMarkVias | function | function () |
-| exportGcodeMarkPads | function | function () |
-| exportGcodeDrillVias | function | function () |
-| exportGcodeDrillPads | function | function () |
-| exportGcodeDimensions | function | function () |
-| exportGcodeFooter | function | function () |
-| exportGcode | function | function ()  |
-| addGcode | function | function (count, gcode) |
-| getGcode | function | function ()  |
-| setupAdvancedInflateByUI | function | function ()  |
-| onRefresh | function | function (event, callback)  |
-| threePathEndMill | object |  |
-| onRefresh2nd | function | function (event, callback)  |
-| getInflatePathWithConstraint | function | function (paths, inflateBy, constraints)  |
-| raycaster | object |  |
-| projector | object |  |
-| arrowHelper | object |  |
-| intersectObjects | object |  |
-| renderArea | object |  |
-| infoArea | object |  |
-| infoSignalArea | object |  |
-| lastIntersect | object |  |
-| hidePopupsElem | object |  |
-| setupMouseOver | function | function ()  |
-| reactivateMouseMove | function | function ()  |
-| deactivateMouseMove | function | function ()  |
-| hidePopups | function | function ()  |
-| lastIntersectOtherMaterials | object |  |
-| onMouseOver | function | function (event)  |
-| getXorOfClipperPaths | function | function (subj_paths, clip_paths)  |
-| getIntersectionOfClipperPaths | function | function (subj_paths, clip_paths)  |
-| getDiffOfClipperPaths | function | function (subj_paths, clip_paths)  |
-| getAllPathsAsOuterOrientation | function | function (subj_paths)  |
-| getUnionOfClipperPaths | function | function (subj_paths)  |
-| drawUnionOfClipperPaths | function | function (subj_paths)  |
-| drawClipperPaths | function | function (paths, color, opacity, z, zstep, isClosed, isAddDirHelper)  |
-| createClipperPathsAsMesh | function | function (paths, color, opacity, holePath)  |
-| getInflatePath | function | function (paths, delta, joinType)  |
-| createThermalCutoutsFromSmd | function | function (smd, poly, myInflateBy)  |
-| sortObjByKey | function | function (obj) |
-| clipperDimension | object |  |
-| getDimensionWires | function | function ()  |
-| draw3dDimension | function | function (endmillSize)  |
-| addStrokeCapsToLine | function | function (x1, y1, x2, y2, width, capType)  |
-| clipperBySignalKey | object |  |
-| clipperBySignalKeyItem | object |  |
-| clipperSignalWires | object |  |
-| clipperSignalPolys | object |  |
-| draw3dVias | function | function (layersName)  |
-| draw3dSignalWires | function | function (layer)  |
-| draw3dSignalPolygons | function | function (layer)  |
-| clipperElements | object |  |
-| clipperPads | object |  |
-| clipperSmds | object |  |
-| clipperVias | object |  |
-| drillPads | object |  |
-| drillVias | object |  |
-| draw3dElements | function | function (layer)  |
-| rotObjectMatrix | object |  |
-| rotateAroundObjectAxis | function | function (object, axis, radians)  |
-| rotWorldMatrix | object |  |
-| rotateAroundWorldAxis | function | function (object, axis, radians)  |
-| drawCircle | function | function (x, y, radius, color) |
-| drawSphere | function | function (x, y, radius, color) |
-| drawSquare | function | function (x1, y1, x2, y2)  |
-| mySceneGroup | object |  |
-| sceneReAddMySceneGroup | function | function ()  |
-| sceneRemoveMySceneGroup | function | function ()  |
-| sceneAdd | function | function (obj)  |
-| sceneRemove | function | function (obj)  |
-| draw | function | function (e)  |
-| onDropped | function | function (data, info)  |
-| onDragOver | function | function ()  |
-| onDragLeave | function | function ()  |
-| isVidLoaded | boolean |  |
-| lazyLoadTutorial | function | function ()  |
-| options | object |  |
-| setupUiFromLocalStorage | function | function ()  |
-| saveOptionsLocalStorage | function | function ()  |
-| showBody | function | function (evt)  |
-| hideBody | function | function (evt)  |
-| btnSetup | function | function ()  |
-| statusEl | object |  |
-| status | function | function (txt)  |
-| forkSetup | function | function ()  |
-=======
   <table id="com-chilipeppr-elem-methodsprops" class="table table-bordered table-striped">
       <thead>
           <tr>
@@ -335,7 +170,7 @@ The table below shows, in order, the methods and properties inside the widget/el
           </tr>
       </thead>
       <tbody>
-      <tr valign="top"><td>id</td><td>string</td><td>"com-chilipeppr-widget-eagle"<br><br>The ID of the widget. You must define this and make it unique.</td></tr><tr valign="top"><td>name</td><td>string</td><td>"Widget / Eagle BRD v4"</td></tr><tr valign="top"><td>desc</td><td>string</td><td>"This widget lets you drag in an Eagle PCB \".brd\" file to mill."</td></tr><tr valign="top"><td>url</td><td>string</td><td>"http://raw.githubusercontent.com/chilipeppr/widget-eagle/master/auto-generated-widget.html"</td></tr><tr valign="top"><td>fiddleurl</td><td>string</td><td>"http://ide.c9.io/chilipeppr/widget-eagle"</td></tr><tr valign="top"><td>githuburl</td><td>string</td><td>"http://github.com/chilipeppr/widget-eagle"</td></tr><tr valign="top"><td>testurl</td><td>string</td><td>"http://widget-eagle-chilipeppr.c9users.io/widget.html"</td></tr><tr valign="top"><td>publish</td><td>object</td><td>Please see docs above.<br><br>Define the publish signals that this widget/element owns or defines so that
+      <tr valign="top"><td>id</td><td>string</td><td>"com-chilipeppr-widget-eagle"<br><br>The ID of the widget. You must define this and make it unique.</td></tr><tr valign="top"><td>name</td><td>string</td><td>"Widget / Eagle BRD v4"</td></tr><tr valign="top"><td>desc</td><td>string</td><td>"This widget lets you drag in an Eagle PCB \".brd\" file to mill."</td></tr><tr valign="top"><td>url</td><td>string</td><td>"http://raw.githubusercontent.com/raykholo/widget-stlViewer3/master/auto-generated-widget.html"</td></tr><tr valign="top"><td>fiddleurl</td><td>string</td><td>"http://ide.c9.io/raykholo/widget-stlviewer3"</td></tr><tr valign="top"><td>githuburl</td><td>string</td><td>"http://github.com/raykholo/widget-stlViewer3"</td></tr><tr valign="top"><td>testurl</td><td>string</td><td>"http://widget-stlviewer3-raykholo.c9users.io/widget.html"</td></tr><tr valign="top"><td>publish</td><td>object</td><td>Please see docs above.<br><br>Define the publish signals that this widget/element owns or defines so that
 other widgets know how to subscribe to them and what they do.</td></tr><tr valign="top"><td>subscribe</td><td>object</td><td>Please see docs above.<br><br>Define the subscribe signals that this widget/element owns or defines so that
 other widgets know how to subscribe to them and what they do.</td></tr><tr valign="top"><td>foreignPublish</td><td>object</td><td>Please see docs above.<br><br>Document the foreign publish signals, i.e. signals owned by other widgets
 or elements, that this widget/element publishes to.</td></tr><tr valign="top"><td>foreignSubscribe</td><td>object</td><td>Please see docs above.<br><br>Document the foreign subscribe signals, i.e. signals owned by other widgets
@@ -356,7 +191,6 @@ polygons that may be on the board representing signal planes like a
 GND plane.</td></tr><tr valign="top"><td>onDraw3dReadyAfter</td><td>function</td><td>function () </td></tr><tr valign="top"><td>clearanceHeight</td><td>number</td><td></td></tr><tr valign="top"><td>depthOfSignalMilling</td><td>number</td><td></td></tr><tr valign="top"><td>feedRatePlunge</td><td>number</td><td></td></tr><tr valign="top"><td>feedRateSignals</td><td>number</td><td></td></tr><tr valign="top"><td>feedRateDimensions</td><td>number</td><td></td></tr><tr valign="top"><td>drillFeedrate</td><td>number</td><td></td></tr><tr valign="top"><td>drillMaxDiameter</td><td>number</td><td></td></tr><tr valign="top"><td>drillDepth</td><td>number</td><td></td></tr><tr valign="top"><td>depthOfDimensions</td><td>number</td><td></td></tr><tr valign="top"><td>millDiameter</td><td>number</td><td></td></tr><tr valign="top"><td>stepDownDimensions</td><td>number</td><td></td></tr><tr valign="top"><td>stepDownPasses</td><td>number</td><td></td></tr><tr valign="top"><td>generateGcodeHole</td><td>function</td><td>function (diameter, x, y)</td></tr><tr valign="top"><td>exportGcodeHeader</td><td>function</td><td>function ()</td></tr><tr valign="top"><td>exportGcodeMilling</td><td>function</td><td>function ()</td></tr><tr valign="top"><td>exportGcodeMarkVias</td><td>function</td><td>function ()</td></tr><tr valign="top"><td>exportGcodeMarkPads</td><td>function</td><td>function ()</td></tr><tr valign="top"><td>exportGcodeDrillVias</td><td>function</td><td>function ()</td></tr><tr valign="top"><td>exportGcodeDrillPads</td><td>function</td><td>function ()</td></tr><tr valign="top"><td>exportGcodeDimensions</td><td>function</td><td>function ()</td></tr><tr valign="top"><td>exportGcodeFooter</td><td>function</td><td>function ()</td></tr><tr valign="top"><td>exportGcode</td><td>function</td><td>function () </td></tr><tr valign="top"><td>gcodeParts</td><td>object</td><td></td></tr><tr valign="top"><td>addGcode</td><td>function</td><td>function (count, gcode)</td></tr><tr valign="top"><td>getGcode</td><td>function</td><td>function () </td></tr><tr valign="top"><td>setupAdvancedInflateByUI</td><td>function</td><td>function () </td></tr><tr valign="top"><td>onRefresh</td><td>function</td><td>function (event, callback) </td></tr><tr valign="top"><td>threePathEndMill</td><td>object</td><td></td></tr><tr valign="top"><td>onRefresh2nd</td><td>function</td><td>function (event, callback) </td></tr><tr valign="top"><td>getInflatePathWithConstraint</td><td>function</td><td>function (paths, inflateBy, constraints) </td></tr><tr valign="top"><td>raycaster</td><td>object</td><td></td></tr><tr valign="top"><td>projector</td><td>object</td><td></td></tr><tr valign="top"><td>arrowHelper</td><td>object</td><td></td></tr><tr valign="top"><td>intersectObjects</td><td>object</td><td></td></tr><tr valign="top"><td>renderArea</td><td>object</td><td></td></tr><tr valign="top"><td>infoArea</td><td>object</td><td></td></tr><tr valign="top"><td>infoSignalArea</td><td>object</td><td></td></tr><tr valign="top"><td>lastIntersect</td><td>object</td><td></td></tr><tr valign="top"><td>hidePopupsElem</td><td>object</td><td></td></tr><tr valign="top"><td>setupMouseOver</td><td>function</td><td>function () </td></tr><tr valign="top"><td>reactivateMouseMove</td><td>function</td><td>function () </td></tr><tr valign="top"><td>deactivateMouseMove</td><td>function</td><td>function () </td></tr><tr valign="top"><td>hidePopups</td><td>function</td><td>function () </td></tr><tr valign="top"><td>lastIntersectOtherMaterials</td><td>object</td><td></td></tr><tr valign="top"><td>onMouseOver</td><td>function</td><td>function (event) </td></tr><tr valign="top"><td>getXorOfClipperPaths</td><td>function</td><td>function (subj_paths, clip_paths) </td></tr><tr valign="top"><td>getIntersectionOfClipperPaths</td><td>function</td><td>function (subj_paths, clip_paths) </td></tr><tr valign="top"><td>getDiffOfClipperPaths</td><td>function</td><td>function (subj_paths, clip_paths) </td></tr><tr valign="top"><td>getAllPathsAsOuterOrientation</td><td>function</td><td>function (subj_paths) </td></tr><tr valign="top"><td>getUnionOfClipperPaths</td><td>function</td><td>function (subj_paths) </td></tr><tr valign="top"><td>drawUnionOfClipperPaths</td><td>function</td><td>function (subj_paths) </td></tr><tr valign="top"><td>drawClipperPaths</td><td>function</td><td>function (paths, color, opacity, z, zstep, isClosed, isAddDirHelper) </td></tr><tr valign="top"><td>createClipperPathsAsMesh</td><td>function</td><td>function (paths, color, opacity, holePath) </td></tr><tr valign="top"><td>getInflatePath</td><td>function</td><td>function (paths, delta, joinType) </td></tr><tr valign="top"><td>createThermalCutoutsFromSmd</td><td>function</td><td>function (smd, poly, myInflateBy) </td></tr><tr valign="top"><td>sortObjByKey</td><td>function</td><td>function (obj)</td></tr><tr valign="top"><td>clipperDimension</td><td>object</td><td></td></tr><tr valign="top"><td>getDimensionWires</td><td>function</td><td>function () </td></tr><tr valign="top"><td>draw3dDimension</td><td>function</td><td>function (endmillSize) </td></tr><tr valign="top"><td>addStrokeCapsToLine</td><td>function</td><td>function (x1, y1, x2, y2, width, capType) </td></tr><tr valign="top"><td>clipperBySignalKey</td><td>object</td><td></td></tr><tr valign="top"><td>clipperBySignalKeyItem</td><td>object</td><td></td></tr><tr valign="top"><td>clipperSignalWires</td><td>object</td><td></td></tr><tr valign="top"><td>clipperSignalPolys</td><td>object</td><td></td></tr><tr valign="top"><td>draw3dVias</td><td>function</td><td>function (layersName) </td></tr><tr valign="top"><td>draw3dSignalWires</td><td>function</td><td>function (layer) </td></tr><tr valign="top"><td>draw3dSignalPolygons</td><td>function</td><td>function (layer) </td></tr><tr valign="top"><td>clipperElements</td><td>object</td><td></td></tr><tr valign="top"><td>clipperPads</td><td>object</td><td></td></tr><tr valign="top"><td>clipperSmds</td><td>object</td><td></td></tr><tr valign="top"><td>clipperVias</td><td>object</td><td></td></tr><tr valign="top"><td>drillPads</td><td>object</td><td></td></tr><tr valign="top"><td>drillVias</td><td>object</td><td></td></tr><tr valign="top"><td>draw3dElements</td><td>function</td><td>function (layer) </td></tr><tr valign="top"><td>rotObjectMatrix</td><td>object</td><td></td></tr><tr valign="top"><td>rotateAroundObjectAxis</td><td>function</td><td>function (object, axis, radians) </td></tr><tr valign="top"><td>rotWorldMatrix</td><td>object</td><td></td></tr><tr valign="top"><td>rotateAroundWorldAxis</td><td>function</td><td>function (object, axis, radians) </td></tr><tr valign="top"><td>drawCircle</td><td>function</td><td>function (x, y, radius, color)</td></tr><tr valign="top"><td>drawSphere</td><td>function</td><td>function (x, y, radius, color)</td></tr><tr valign="top"><td>drawSquare</td><td>function</td><td>function (x1, y1, x2, y2) </td></tr><tr valign="top"><td>mySceneGroup</td><td>object</td><td></td></tr><tr valign="top"><td>sceneReAddMySceneGroup</td><td>function</td><td>function () </td></tr><tr valign="top"><td>sceneRemoveMySceneGroup</td><td>function</td><td>function () </td></tr><tr valign="top"><td>sceneAdd</td><td>function</td><td>function (obj) </td></tr><tr valign="top"><td>sceneRemove</td><td>function</td><td>function (obj) </td></tr><tr valign="top"><td>draw</td><td>function</td><td>function (e) </td></tr><tr valign="top"><td>onDropped</td><td>function</td><td>function (data, info) </td></tr><tr valign="top"><td>onDragOver</td><td>function</td><td>function () </td></tr><tr valign="top"><td>onDragLeave</td><td>function</td><td>function () </td></tr><tr valign="top"><td>isVidLoaded</td><td>boolean</td><td></td></tr><tr valign="top"><td>lazyLoadTutorial</td><td>function</td><td>function () </td></tr><tr valign="top"><td>options</td><td>object</td><td></td></tr><tr valign="top"><td>setupUiFromLocalStorage</td><td>function</td><td>function () </td></tr><tr valign="top"><td>saveOptionsLocalStorage</td><td>function</td><td>function () </td></tr><tr valign="top"><td>showBody</td><td>function</td><td>function (evt) </td></tr><tr valign="top"><td>hideBody</td><td>function</td><td>function (evt) </td></tr><tr valign="top"><td>btnSetup</td><td>function</td><td>function () </td></tr><tr valign="top"><td>statusEl</td><td>object</td><td></td></tr><tr valign="top"><td>status</td><td>function</td><td>function (txt) </td></tr><tr valign="top"><td>forkSetup</td><td>function</td><td>function () </td></tr>
       </tbody>
   </table>
->>>>>>> refs/remotes/chilipeppr/master
 
 
 ## About ChiliPeppr
