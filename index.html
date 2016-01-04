@@ -152,14 +152,17 @@ requirejs.config({
        // Don't put .js at end of URL (except when passing thru CP geturl proxy)
         Three: '//i2dcui.appspot.com/geturl?url=http://threejs.org/build/three.min.js',
         ThreeTextGeometry: '//i2dcui.appspot.com/js/three/TextGeometry',
-        ThreeFontUtils: '//i2dcui.appspotr.com/js/three/FontUtils',
+        ThreeFontUtils: '//i2dcui.appspot.com/js/three/FontUtils',
         ThreeHelvetiker: '//i2dcui.appspot.com/js/three/threehelvetiker',
-        Clipper: '//i2dcui.appspot.com/js/clipper/clipper_unminified'
+        Clipper: '//i2dcui.appspot.com/js/clipper/clipper_unminified',
+        ThreeSTLLoader: '//i2dcui.appspot.com/geturl?url=http://threejs.org/examples/js/loaders/STLLoader.js'
+
    },
    shim: {
        ThreeTextGeometry: ['Three'],
        ThreeFontUtils: ['Three', 'ThreeTextGeometry'],
        ThreeHelvetiker: ['Three', 'ThreeTextGeometry', 'ThreeFontUtils'],
+       ThreeSTLLoader: ['Three', 'ThreeTextGeometry', 'ThreeFontUtils', 'ThreeHelvetiker'],  //Have tried with and without this
    }
 });
 
@@ -243,7 +246,7 @@ cprequire_test(["inline:com-chilipeppr-widget-eagle"], function (ew) {
 } /*end_test*/ );
 
 // This is the main definition of your widget. Give it a unique name.
-cpdefine("inline:com-chilipeppr-widget-eagle", ["chilipeppr_ready", "Clipper", "jqueryuiWidget"], function () {
+cpdefine("inline:com-chilipeppr-widget-eagle", ["chilipeppr_ready", "Clipper", "jqueryuiWidget", "ThreeSTLLoader"], function () {
     return {
         /**
          * The ID of the widget. You must define this and make it unique.
@@ -880,6 +883,35 @@ onAddGcode : function(addGcodeCallback, gcodeParts, eagleWidget, helpDesc){
                 console.log("no last file, so not opening");
             }
         },
+        //mySTLGroup: null,
+        testLoadSTL: function () {
+            //var scene = new THREE.Scene();
+            var loader = new THREE.STLLoader();
+            var stlScenGroup = new THREE.Group();
+            //this.mySTLGroup = null;
+            //loader.load( './models/stl/ascii/slotted_disk.stl', function ( geometryR ) {
+            loader.load( './models/Z Axis Plate Motor Side v1.stl', function ( geometryR ) {
+
+					var materialR = new THREE.MeshPhongMaterial( { color: 0xff5533, specular: 0x111111, shininess: 200 } );
+					var mesh = new THREE.Mesh( geometryR, materialR );
+
+					mesh.position.set( 5, 5, 0.6 );
+					//mesh.rotation.set( 0, - Math.PI / 2, 0 );
+					//mesh.scale.set( 5, 5, 5 );
+
+					mesh.castShadow = false;
+					mesh.receiveShadow = false;
+
+					//scene.add( mesh );
+					//this.sceneAdd (mesh);
+					//this.mySTLGroup.add (mesh);
+					stlScenGroup.add (mesh);
+					console.log ("ray mesh:  ", mesh);
+
+				} );
+				console.log ("stlScenGroup:  ", JSON.stringify(stlScenGroup, null, 2) );
+            this.sceneAdd (stlScenGroup);
+        },
         /**
          * We need the 3D viewer to be ready to go for us to generate our 3D view,
          * so do a little bit of a wait sequence here where we try 3 times to
@@ -965,12 +997,15 @@ onAddGcode : function(addGcodeCallback, gcodeParts, eagleWidget, helpDesc){
             // these methods will draw all Eagle objects into several global
             // properties, the most important of which is this.clipperBySignalKey
             // which holds a structured object of each signal, i.e. +3V, GND, etc.
+            /*
             this.draw3dSignalWires(this.eagle.eagleLayersByName[this.activeLayer]);
             this.draw3dSignalPolygons(this.eagle.eagleLayersByName[this.activeLayer]);
             this.draw3dElements(this.eagle.eagleLayersByName[this.activeLayer]);
             
             this.draw3dVias('1-16');
             this.threeDimensions = this.draw3dDimension(this.endmillSize);
+            */
+            this.testLoadSTL();
             //this.obj3d.children = [];
             
             // obj3d is the original THREE.Object3D() for the 3d
