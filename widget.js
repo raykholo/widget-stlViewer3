@@ -30,8 +30,8 @@ requirejs.config({
         ThreeFontUtils: '//i2dcui.appspot.com/js/three/FontUtils',
         ThreeHelvetiker: '//i2dcui.appspot.com/js/three/threehelvetiker',
         Clipper: '//i2dcui.appspot.com/js/clipper/clipper_unminified',
-        ThreeSTLLoader: '//i2dcui.appspot.com/geturl?url=http://threejs.org/examples/js/loaders/STLLoader.js'
-        //ThreeSTLLoader: '//i2dcui.appspot.com/geturl?url=https://raw.githubusercontent.com/raykholo/library/master/stl_parse_load.js'
+        //ThreeSTLLoader: '//i2dcui.appspot.com/geturl?url=http://threejs.org/examples/js/loaders/STLLoader.js'
+        ThreeSTLLoader: '//i2dcui.appspot.com/geturl?url=https://raw.githubusercontent.com/raykholo/library/master/stl_parse_load.js'
    },
    shim: {
        ThreeTextGeometry: ['Three'],
@@ -277,7 +277,7 @@ onAddGcode : function(addGcodeCallback, gcodeParts, eagleWidget, helpDesc){
             // setup clear button
             $('#com-chilipeppr-widget-eagle .btn-clear').click(this.clearEagleBrd.bind(this));
             
-            this.draw3d();
+            //this.draw3d();
 
             console.log(this.name + " done loading.");
         },
@@ -553,11 +553,12 @@ onAddGcode : function(addGcodeCallback, gcodeParts, eagleWidget, helpDesc){
             
             //var tempFile = "";
             
+            
             var loader = new THREE.STLLoader();
             var stlScenGroup = new THREE.Group();
             //this.mySTLGroup = null;
-            loader.load( './models/stl/ascii/slotted_disk.stl', function ( geometryR ) {
-            //loader.load( './models/Z Axis Plate Motor Side v1.stl', function ( geometryR ) {
+            //loader.load( './models/stl/ascii/slotted_disk.stl', function ( geometryR ) {
+            loader.load( './models/Z Axis Plate Motor Side v1.stl', function ( geometryR ) {
             // loader.load( './models/aria.stl', function ( geometryR ) {
 
 					var materialR = new THREE.MeshPhongMaterial( { color: 0xff5533, specular: 0x111111, shininess: 200 } );
@@ -598,7 +599,7 @@ onAddGcode : function(addGcodeCallback, gcodeParts, eagleWidget, helpDesc){
 
 				} );*/
 				
-				//console.log ("stlScenGroup:  ", JSON.stringify(stlScenGroup, null, 2) );
+				console.log ("stlScenGroup:  ", JSON.stringify(stlScenGroup, null, 2) );
             this.sceneAdd (stlScenGroup);
         },
         loadStlModel: function (modelData) {
@@ -727,7 +728,7 @@ onAddGcode : function(addGcodeCallback, gcodeParts, eagleWidget, helpDesc){
             this.draw3dVias('1-16');
             this.threeDimensions = this.draw3dDimension(this.endmillSize);
             */
-            this.testLoadSTL();
+            //this.testLoadSTL();
             //this.drawAllStlModels();
             //this.obj3d.children = [];
             
@@ -1913,9 +1914,363 @@ onAddGcode : function(addGcodeCallback, gcodeParts, eagleWidget, helpDesc){
 
         // THIS SECTION OF CODE IS UTILITY METHODS FOR WORKING WITH CLIPPER.JS
         
-        
-        
-        
+        getXorOfClipperPaths: function (subj_paths, clip_paths) {
+            //console.log("getXorOfClipperPaths");
+            var cpr = new ClipperLib.Clipper();
+            var scale = 10000;
+            ClipperLib.JS.ScaleUpPaths(subj_paths, scale);
+            ClipperLib.JS.ScaleUpPaths(clip_paths, scale);
+            cpr.AddPaths(subj_paths, ClipperLib.PolyType.ptSubject, true);
+            cpr.AddPaths(clip_paths, ClipperLib.PolyType.ptClip, true);
+            var clipType = ClipperLib.ClipType.ctXor;
+            var subject_fillType = ClipperLib.PolyFillType.pftNonZero;
+            var clip_fillType = ClipperLib.PolyFillType.pftNonZero;
+            var solution_paths = new ClipperLib.Paths();
+            cpr.Execute(clipType, solution_paths, subject_fillType, clip_fillType);
+
+            ClipperLib.JS.ScaleDownPaths(solution_paths, scale);
+            ClipperLib.JS.ScaleDownPaths(clip_paths, scale);
+            ClipperLib.JS.ScaleDownPaths(subj_paths, scale);
+            return solution_paths;
+        },
+        getIntersectionOfClipperPaths: function (subj_paths, clip_paths) {
+            //console.log("getIntersectionOfClipperPaths");
+            var cpr = new ClipperLib.Clipper();
+            var scale = 10000;
+            ClipperLib.JS.ScaleUpPaths(subj_paths, scale);
+            ClipperLib.JS.ScaleUpPaths(clip_paths, scale);
+            cpr.AddPaths(subj_paths, ClipperLib.PolyType.ptSubject, true);
+            cpr.AddPaths(clip_paths, ClipperLib.PolyType.ptClip, true);
+            var clipType = ClipperLib.ClipType.ctIntersection;
+            var subject_fillType = ClipperLib.PolyFillType.pftNonZero;
+            var clip_fillType = ClipperLib.PolyFillType.pftNonZero;
+            var solution_paths = new ClipperLib.Paths();
+            cpr.Execute(clipType, solution_paths, subject_fillType, clip_fillType);
+
+            ClipperLib.JS.ScaleDownPaths(solution_paths, scale);
+            ClipperLib.JS.ScaleDownPaths(clip_paths, scale);
+            ClipperLib.JS.ScaleDownPaths(subj_paths, scale);
+            return solution_paths;
+        },
+        getDiffOfClipperPaths: function (subj_paths, clip_paths) {
+            //console.log("getDiffOfClipperPaths");
+            var cpr = new ClipperLib.Clipper();
+            var scale = 10000;
+            ClipperLib.JS.ScaleUpPaths(subj_paths, scale);
+            ClipperLib.JS.ScaleUpPaths(clip_paths, scale);
+            cpr.AddPaths(subj_paths, ClipperLib.PolyType.ptSubject, true);
+            cpr.AddPaths(clip_paths, ClipperLib.PolyType.ptClip, true);
+            var clipType = ClipperLib.ClipType.ctDifference;
+            var subject_fillType = ClipperLib.PolyFillType.pftNonZero;
+            var clip_fillType = ClipperLib.PolyFillType.pftNonZero;
+            var solution_paths = new ClipperLib.Paths();
+            cpr.Execute(clipType, solution_paths, subject_fillType, clip_fillType);
+
+            ClipperLib.JS.ScaleDownPaths(solution_paths, scale);
+            ClipperLib.JS.ScaleDownPaths(clip_paths, scale);
+            ClipperLib.JS.ScaleDownPaths(subj_paths, scale);
+            return solution_paths;
+        },
+        getAllPathsAsOuterOrientation: function(subj_paths) {
+            var sol_path = [];
+            subj_paths.forEach(function(path) {
+                if (ClipperLib.Clipper.Orientation(path)) {
+                    // we're fine. this is in outer mode
+                    sol_path.push(path);
+                } else {
+                    // we should reverse it
+                    sol_path.push(path.reverse());
+                }
+            });
+            return sol_path;
+        },
+        getUnionOfClipperPaths: function (subj_paths) {
+            //console.log("getUnionOfClipperPaths");
+            var cpr = new ClipperLib.Clipper();
+            var scale = 100000;
+            ClipperLib.JS.ScaleUpPaths(subj_paths, scale);
+            cpr.AddPaths(subj_paths, ClipperLib.PolyType.ptSubject, true);
+            var subject_fillType = ClipperLib.PolyFillType.pftNonZero;
+            var clip_fillType = ClipperLib.PolyFillType.pftNonZero;
+            var solution_paths = new ClipperLib.Paths();
+            cpr.Execute(ClipperLib.ClipType.ctUnion, solution_paths, subject_fillType, clip_fillType);
+            //console.log(JSON.stringify(solution_paths));
+            //console.log("solution:", solution_paths);
+            // scale back down
+            for (var i = 0; i < solution_paths.length; i++) {
+                for (var j = 0; j < solution_paths[i].length; j++) {
+                    solution_paths[i][j].X = solution_paths[i][j].X / scale;
+                    solution_paths[i][j].Y = solution_paths[i][j].Y / scale;
+                }
+            }
+            ClipperLib.JS.ScaleDownPaths(subj_paths, scale);
+            return solution_paths;
+        },
+        drawUnionOfClipperPaths: function (subj_paths) {
+            var that = this;
+            var solution_paths = this.getUnionOfClipperPaths(subj_paths);
+
+            for (var i = 0; i < solution_paths.length; i++) {
+                var lineUnionGeo = new THREE.Geometry();
+                for (var j = 0; j < solution_paths[i].length; j++) {
+                    lineUnionGeo.vertices.push(new THREE.Vector3(solution_paths[i][j].X, solution_paths[i][j].Y, 0));
+                }
+                // close it by connecting last point to 1st point
+                lineUnionGeo.vertices.push(new THREE.Vector3(solution_paths[i][0].X, solution_paths[i][0].Y, 0));
+
+                var lineUnionMat = new THREE.LineBasicMaterial({
+                    color: 0x0000ff,
+                    transparent: true,
+                    opacity: 0.5
+                });
+                var lineUnion = new THREE.Line(lineUnionGeo, lineUnionMat);
+                lineUnion.position.set(0, -20, 0);
+                that.sceneAdd(lineUnion);
+            }
+        },
+        drawClipperPaths: function (paths, color, opacity, z, zstep, isClosed, isAddDirHelper) {
+            console.log("drawClipperPaths");
+            var lineUnionMat = new THREE.LineBasicMaterial({
+                color: color,
+                transparent: true,
+                opacity: opacity
+            });
+
+            if (z === undefined || z == null)
+                z = 0;
+
+            if (zstep === undefined || zstep == null)
+                zstep = 0;
+
+            if (isClosed === undefined || isClosed == null)
+                isClosed = true;
+            
+            var group = new THREE.Object3D();
+
+            for (var i = 0; i < paths.length; i++) {
+                var lineUnionGeo = new THREE.Geometry();
+                for (var j = 0; j < paths[i].length; j++) {
+                    var actualZ = z;
+                    if (zstep != 0) actualZ += zstep * j;
+                    lineUnionGeo.vertices.push(new THREE.Vector3(paths[i][j].X, paths[i][j].Y, actualZ));
+                    
+                    // does user want arrow helper to show direction
+                    if (isAddDirHelper) {
+                        /*
+                        var pt = { X: paths[i][j].X, Y: paths[i][j].Y, Z: actualZ };
+                        var ptNext;
+                        if (j + 1 >= paths[i].length)
+                            ptNext = {X: paths[i][0].X, Y: paths[i][0].Y, Z: actualZ };
+                        else
+                            ptNext = {X: paths[i][j+1].X, Y: paths[i][j+1].Y, Z: actualZ };
+                        // x2-x1,y2-y1
+                        var dir = new THREE.Vector3( ptNext.X - pt.X, ptNext.Y - pt.Y, ptNext.Z - pt.Z );
+                        var origin = new THREE.Vector3( pt.X, pt.Y, pt.Z );
+                        var length = 0.1;
+                        var hex = 0xff0000;
+                        
+                        var arrowHelper = new THREE.ArrowHelper( dir, origin, length, hex );
+                        group.add( arrowHelper );
+                        */
+                    }
+                }
+                // close it by connecting last point to 1st point
+                if (isClosed) lineUnionGeo.vertices.push(new THREE.Vector3(paths[i][0].X, paths[i][0].Y, z));
+
+
+                var lineUnion = new THREE.Line(lineUnionGeo, lineUnionMat);
+                //lineUnion.position.set(0,-20,0);
+                group.add(lineUnion);
+            }
+            this.sceneAdd(group);
+            return group;
+        },
+        createClipperPathsAsMesh: function (paths, color, opacity, holePath) {
+            //console.log("createClipperPathsAsMesh. paths:", paths, "holePath:", holePath);
+            if(color === undefined)
+               color = this.colorDimension;
+            var mat = new THREE.MeshBasicMaterial({
+                color: color,
+                transparent: true,
+                opacity: opacity,
+                side: THREE.DoubleSide,
+                depthWrite: false
+            });
+
+            
+            if (paths.length == 1) {
+                var shape = new THREE.Shape();
+                var i = 0;
+                for (var j = 0; j < paths[i].length; j++) {
+                    var pt = paths[i][j];
+                    if (j == 0) shape.moveTo(pt.X, pt.Y);
+                    else shape.lineTo(pt.X, pt.Y);
+                }
+                
+                // see if asked to create hole
+                // multiple holes supported now
+                if (holePath !== undefined && holePath != null) {
+                    if (!(Array.isArray(holePath))) {
+                        holePath = [holePath];
+                    }
+                    
+                    for (var hi = 0; hi < holePath.length; hi++) {
+                        var hp = holePath[hi];
+                        console.log("adding hole:", hp);
+                        var hole = new THREE.Path();
+                        //var i = 0;
+                        for (var j = 0; j < hp.length; j++) {
+                            var pt = hp[j];
+                            if (j == 0) hole.moveTo(pt.X, pt.Y);
+                            else hole.lineTo(pt.X, pt.Y);
+                        }
+                        shape.holes.push(hole);
+                    }
+                }
+
+                var geometry = new THREE.ShapeGeometry( shape );
+                var shapeMesh = new THREE.Mesh(geometry, mat);
+                
+                //group.add(shapeMesh);
+                return shapeMesh;
+            } else {
+                var group = new THREE.Object3D();
+                
+                for (var i = 0; i < paths.length; i++) {
+                    var shape = new THREE.Shape();
+                    for (var j = 0; j < paths[i].length; j++) {
+                        var pt = paths[i][j];
+                        if (j == 0) shape.moveTo(pt.X, pt.Y);
+                        else shape.lineTo(pt.X, pt.Y);
+                    }
+                    
+                    // see if asked to create hole
+                    // multiple holes supported now
+                    if (holePath !== undefined && holePath != null) {
+                        if (!(Array.isArray(holePath))) {
+                            holePath = [holePath];
+                        }
+                        
+                        for (var hi = 0; hi < holePath.length; hi++) {
+                            var hp = holePath[hi];
+                            console.log("adding hole:", hp);
+                            var hole = new THREE.Path();
+                            //var i = 0;
+                            for (var j = 0; j < hp.length; j++) {
+                                var pt = hp[j];
+                                if (j == 0) hole.moveTo(pt.X, pt.Y);
+                                else hole.lineTo(pt.X, pt.Y);
+                            }
+                            shape.holes.push(hole);
+                        }
+                    }  
+                    
+                    var geometry = new THREE.ShapeGeometry( shape );
+                    var shapeMesh = new THREE.Mesh(geometry, mat);
+                    
+                    group.add(shapeMesh);
+                }
+                return group;
+            }
+            //this.sceneAdd(group);
+            
+        },
+        getInflatePath: function (paths, delta, joinType) {
+            var scale = 10000;
+            ClipperLib.JS.ScaleUpPaths(paths, scale);
+            var miterLimit = 2;
+            var arcTolerance = 10;
+            joinType = joinType ? joinType : ClipperLib.JoinType.jtRound
+            var co = new ClipperLib.ClipperOffset(miterLimit, arcTolerance);
+            co.AddPaths(paths, joinType, ClipperLib.EndType.etClosedPolygon);
+            //var delta = 0.0625; // 1/16 inch endmill
+            var offsetted_paths = new ClipperLib.Paths();
+            co.Execute(offsetted_paths, delta * scale);
+
+            // scale back down
+            for (var i = 0; i < offsetted_paths.length; i++) {
+                for (var j = 0; j < offsetted_paths[i].length; j++) {
+                    offsetted_paths[i][j].X = offsetted_paths[i][j].X / scale;
+                    offsetted_paths[i][j].Y = offsetted_paths[i][j].Y / scale;
+                }
+            }
+            ClipperLib.JS.ScaleDownPaths(paths, scale);
+            return offsetted_paths;
+
+        },
+        createThermalCutoutsFromSmd: function(smd, poly, myInflateBy) {
+            
+            console.log("creating thermal cutouts for an smd:", smd);
+            var cutoutPath = ClipperLib.JS.Clone([smd.clipper]);
+            //return cutoutPath;
+            
+            // start with inflated smd 
+            var inflatedSmd = this.getInflatePath(cutoutPath, myInflateBy);
+            
+            // since we just want the endmill to go around the outside with a sliver
+            // being cut off, deflate by 5% the inflateSmd path and then cutout from
+            // inflateSmd
+            var smdCutout = this.getInflatePath(inflatedSmd, myInflateBy * -0.05);
+            
+            // cutout from inflatedSmd
+            inflatedSmd = this.getDiffOfClipperPaths(inflatedSmd, smdCutout);
+            
+            // now add back cross hairs, they should be width
+            // of the poly outline stroke
+            var width = poly.width;
+            console.log("width of cross hairs:", width);
+            
+            // get center of smd
+            console.log("smd:", smd);
+            // get bounding box
+            var threeInflateSmd = this.createClipperPathsAsMesh(inflatedSmd, 0x00ff00, 0.9);
+            var bbox = new THREE.BoundingBoxHelper(threeInflateSmd);
+            bbox.update();
+            console.log("bbox:", bbox);
+            var cx = ((bbox.box.max.x - bbox.box.min.x) / 2) + bbox.box.min.x;
+            var cy = ((bbox.box.max.y - bbox.box.min.y) / 2) + bbox.box.min.y;
+            var strokeX = this.addStrokeCapsToLine(bbox.box.min.x, cy, bbox.box.max.x, cy, width, "square" );
+            var strokeY = this.addStrokeCapsToLine(cx, bbox.box.min.y, cx, bbox.box.max.y, width, "square" );
+            //strokeX = this.getAllPathsAsOuterOrientation(strokeX);
+            var clipperStroke = this.getUnionOfClipperPaths([strokeX[0], strokeY[0]]);
+            //this.drawClipperPaths(clipperStroke, 0x00ff00, 0.99, debugZ);
+            // inflate stroke
+            clipperStroke = this.getInflatePath(clipperStroke, myInflateBy / 2);
+            console.log("clipperStroke:", clipperStroke);
+            
+            // remove strokes from poly
+            var pathWithStrokesRemoved = this.getDiffOfClipperPaths(inflatedSmd, clipperStroke);
+            //this.drawClipperPaths(pathWithStrokesRemoved, 0x00ff00, 0.99, 5.0);
+            
+            // remove non-inflated smd 
+            //pathWithStrokesRemoved.push(smd.clipper);
+            var pathWithSmdRemoved = this.getDiffOfClipperPaths(pathWithStrokesRemoved, [smd.clipper]);
+            //this.drawClipperPaths(pathWithSmdRemoved, 0x0000ff, 0.99, 6.0);
+            
+            return pathWithSmdRemoved;
+        },
+        sortObjByKey: function (obj){
+          var keys = [];
+          var sorted_obj = {};
+      
+          for(var key in obj){
+              if(obj.hasOwnProperty(key)){
+                  keys.push(key);
+              }
+          }
+      
+          // sort keys
+          keys.sort();
+      
+          // create new array based on Sorted Keys
+          jQuery.each(keys, function(i, key){
+              sorted_obj[key] = obj[key];
+          });
+      
+          return sorted_obj;
+        },
+
+
 
         // THIS SECTION IS FOR WORKING ON THE DIMENSION OF THE BOARD
         
@@ -2012,6 +2367,1478 @@ onAddGcode : function(addGcodeCallback, gcodeParts, eagleWidget, helpDesc){
         // i.e. this takes a line with start/end and creates a stroked line with
         // a round end and returns a three.js object
         
+        addStrokeCapsToLine: function (x1, y1, x2, y2, width, capType) {
+
+            var cap = capType != null ? capType : "round";
+
+            // we are given a line with two points. to stroke and cap it
+            // we will draw the line in THREE.js and then shift x1/y1 to 0,0
+            // for the whole line
+            // then we'll rotate it to 3 o'clock
+            // then we'll shift it up on x to half width
+            // we'll create new vertexes on -x for half width
+            // we then have a drawn rectangle that's the stroke
+            // we'll add a circle at the start and end point for the cap
+            // then we'll unrotate it
+            // then we'll unshift it
+            var group = new THREE.Object3D();
+
+            var lineGeo = new THREE.Geometry();
+            lineGeo.vertices.push(new THREE.Vector3(x1, y1, 0));
+            lineGeo.vertices.push(new THREE.Vector3(x2, y2, 0));
+            var lineMat = new THREE.LineBasicMaterial({
+                color: this.colorSignal,
+                transparent: true,
+                opacity: this.opacitySignal
+            });
+            var line = new THREE.Line(lineGeo, lineMat);
+
+            // shift to make x1/y1 zero
+            line.position.set(x1 * -1, y1 * -1, 0);
+            //line.updateMatrixWorld();
+            group.add(line);
+
+            // figure out angle to rotate to 0 degrees
+            var x = x2 - x1;
+            var y = y2 - y1;
+            var theta = Math.atan2(-y, x);
+            group.rotateZ(theta);
+
+            // get our new xy coords for start/end of line
+            //line.updateMatrixWorld();
+            group.updateMatrixWorld();
+            var v1 = line.localToWorld(line.geometry.vertices[0].clone());
+            var v2 = line.localToWorld(line.geometry.vertices[1].clone());
+            //console.log("v1,v2", v1, v2);
+
+            // draw rectangle along line. apply width to y axis.
+            var wireGrp = new THREE.Object3D();
+
+            var rectGeo = new THREE.Geometry();
+            rectGeo.vertices.push(new THREE.Vector3(v1.x, v1.y - width / 2, 0));
+            rectGeo.vertices.push(new THREE.Vector3(v2.x, v1.y - width / 2, 0));
+            rectGeo.vertices.push(new THREE.Vector3(v2.x, v1.y + width / 2, 0));
+            rectGeo.vertices.push(new THREE.Vector3(v1.x, v1.y + width / 2, 0));
+            rectGeo.vertices.push(new THREE.Vector3(v1.x, v1.y - width / 2, 0));
+            var rectLines = new THREE.Line(rectGeo, lineMat);
+            wireGrp.add(rectLines);
+            //rectLines.position.set(x1 * -1, y1 * -1, 0);
+            //group.add(rectLines);
+
+            // now add circle caps
+            if (cap == "round") {
+                var radius = width / 2;
+                var segments = 16;
+                var circleGeo = new THREE.CircleGeometry(radius, segments);
+                // Remove center vertex
+                circleGeo.vertices.shift();
+                var circle = new THREE.Line(circleGeo, lineMat);
+                // clone the circle
+                var circle2 = circle.clone();
+
+                // shift left (rotate 0 is left/right)
+                var shiftX = 0; //radius * -1;
+                var shiftY = 0;
+                circle.position.set(shiftX + v1.x, shiftY + v1.y, 0);
+                wireGrp.add(circle);
+
+                // shift right
+                var shiftX = 0; //radius * 1;
+                var shiftY = 0;
+                circle2.position.set(shiftX + v2.x, shiftY + v2.y, 0);
+                wireGrp.add(circle2);
+            }
+
+            // now reverse rotate
+            wireGrp.rotateZ(-theta);
+
+            // unshift postion
+            wireGrp.position.set(x1 * 1, y1 * 1, 0);
+
+            //this.sceneAdd(wireGrp);
+
+            // now simplify via Clipper
+            var subj_paths = [];
+            wireGrp.updateMatrixWorld();
+            var lineCtr = 0;
+            wireGrp.children.forEach(function (line) {
+                //console.log("line in group:", line);
+                subj_paths.push([]);
+                line.geometry.vertices.forEach(function (v) {
+                    //line.updateMatrixWorld();
+                    //console.log("pushing v onto clipper:", v);
+                    var vector = v.clone();
+                    var vec = line.localToWorld(vector);
+                    subj_paths[lineCtr].push({
+                        X: vec.x,
+                        Y: vec.y
+                    });
+                }, this);
+                lineCtr++;
+            }, this);
+
+            var sol_paths = this.getUnionOfClipperPaths(subj_paths);
+            //this.drawClipperPaths(sol_paths, this.colorSignal, 0.8);
+            //this.sceneAdd(group);
+            return sol_paths;
+
+        },
+
+        // THIS SECTION TURNS THE BRD FILE INTO A USABLE JAVASCRIPT OBJECT
+        // THAT IS STRUCTED BY THE SIGNAL NAME AND EACH SIGNAL CONTAINS ALL
+        // ELEMENTS FOR THAT SIGNAL
+        
+        // It also draws the basic Three.js objects for smds,pads,vias,wires.
+        
+        // the mondo object contains the whole structure of the board
+        // with objects for each key item. the main index is the signal name, i.e.
+        // GND, +5V, etc.
+        clipperBySignalKey: [],
+        clipperBySignalKeyItem: {
+            wires: [],
+            polys: [],
+            vias: [],
+            smds: [],
+            pads: [],
+        },
+        clipperSignalWires: [], // holds clipper formatted paths
+        clipperSignalPolys: [], // holds clipper formatted polygons
+        draw3dVias: function (layersName) {
+            if (!layersName) return;
+            var that = this;
+            console.group("draw3dVias");
+            //console.log("this.signalItems:", this.eagle.signalItems);
+            
+            for (var signalKey in this.eagle.signalItems) {
+                
+                var signalLayers = this.eagle.signalItems[signalKey];
+                var layerItems = signalLayers[layersName];
+                if (!layerItems) {
+                    continue;
+                }
+                var layerVias = layerItems['vias'] || [];
+                //console.log("layerVias:", layerVias);
+                
+                // create mondo storage
+                if (this.clipperBySignalKey[signalKey] === undefined)
+                    this.clipperBySignalKey[signalKey] = {};
+                this.clipperBySignalKey[signalKey].vias = [];
+                
+                // create mesh version
+                var viaMat = new THREE.MeshBasicMaterial({
+                    color: this.colorVia,
+                    transparent: true,
+                    opacity: this.opacityVia,
+                    side: THREE.DoubleSide,
+                    depthWrite: false
+                });
+                var lineMat = new THREE.LineBasicMaterial({
+                    color: this.colorVia,
+                    transparent: true,
+                    opacity: 0.99
+                });
+
+                layerVias.forEach(function (via) {
+                    //console.log("generating circle for via:", via);
+
+                    // save all drills for vias                  
+                    // Most exists only drills with diameter 1.0 0.9 0.8 ...
+                    var drill = via.drill.toFixed(1);
+                    if(that.drillVias[drill] === undefined)
+                        that.drillVias[drill] = [];
+                    that.drillVias[drill].push({
+                        X: via.x.toFixed(4),
+                        Y: via.y.toFixed(4),
+                        D: via.drill.toFixed(4)
+                    });
+                    
+                    
+                    var viashape = "round";
+                    if ('shape' in via) viashape = via.shape;
+                    
+                    var radius = via.drill; //(via.drill * 2) / 2;
+                    var segments = 32;
+                    if (viashape == "octagon") segments = 8;
+                        
+                    viaGeo = new THREE.CircleGeometry(radius, segments);                    
+                    // Remove center vertex
+                    viaGeo.vertices.shift();
+                    //viaGeo.vertices.pop();
+                   
+                    var line = that.drawCircle(via.x, via.y, via.drill/2, that.colorHole);
+                    line.rotateZ(Math.PI / 8);
+                    this.sceneAdd(line);
+                    
+                    // Create shape with hole
+                    var shape = new THREE.Shape();
+                    
+                    // Add outside circle to via
+                    var ptCtr = 0;
+                    
+                    viaGeo.vertices.forEach(function (pt) {
+                        //console.log("pt on via:", pt);
+                        if (ptCtr == 0) shape.moveTo(pt.x, pt.y);
+                        else shape.lineTo(pt.x, pt.y);
+                        ptCtr++;
+                    }, this);
+                    //console.log("shape", shape);
+                    //var pt = viaGeo.vertices[0];
+                    //shape.lineTo(pt.X, pt.y);
+                    
+                    // Create hole inside
+                    radius = via.drill / 2;
+                    segments = 32;
+                    
+                    holeGeo = new THREE.CircleGeometry(radius, segments);                    
+                    // Remove center vertex
+                    holeGeo.vertices.shift();
+
+                    var hole = new THREE.Path();
+                    
+                    var ptCtr = 0;
+                    holeGeo.vertices.forEach(function (pt) {
+                        if (ptCtr == 0) hole.moveTo(pt.x, pt.y);
+                        else hole.lineTo(pt.x, pt.y);
+                        ptCtr++;
+                    }, this);
+                    shape.holes.push(hole);
+                    
+                    // create mesh for the via
+                    var geometry = new THREE.ShapeGeometry( shape );
+                    var mesh = new THREE.Mesh(geometry, viaMat );
+
+                    // move shape to correct position
+                    mesh.position.set(via.x, via.y, 0);
+                    mesh.rotateZ(Math.PI / 8);
+                    
+                    mesh.userData["type"] = "via";
+                    mesh.userData["via"] = via;
+                    mesh.userData["name"] = signalKey;
+                    mesh.userData["layerVias"] = layerVias;
+                    this.sceneAdd(mesh);
+                    
+                    // add that these get detected during
+                    // mouseover
+                    this.intersectObjects.push(mesh);
+
+                    // add to via object
+                    via["threeObj"] = mesh;
+                    
+                    // add clipper path
+                    var clipperPath = [];
+                    line.updateMatrixWorld();
+                    line.geometry.vertices.forEach(function(v) {
+                        var vector = v.clone();
+                        var vec = line.localToWorld(vector);
+                        clipperPath.push({X: vec.x, Y: vec.y});
+                    }, this);
+                    this.clipperVias.push(clipperPath);
+                    
+                    // add to mondo object
+                    this.clipperBySignalKey[signalKey].vias.push({
+                        clipper: clipperPath,
+                        via: via,
+                        threeObj: mesh
+                    });
+                    
+                }, this)
+                
+            }
+            console.log("this.clipperBySignalKey[]:", this.clipperBySignalKey);
+            console.groupEnd();
+        
+        },
+        draw3dSignalWires: function (layer) {
+            //debugger;
+            if (!layer) {
+                return;
+            }
+            
+            
+
+            console.group("draw3dSignalWires");
+            console.log("layer:", layer);
+            
+            var layerNumber = layer.number;
+            var layerName = layer.name;
+            var tempColor = 11403055;
+            
+            if (layerName == "Top") {
+            	//console.log("RAY!!! 3dSignalWireLayerName: T.  ", layerName)
+              tempColor = this.colorSignal;
+              }
+            else if (layerName == "Bottom") {
+            	//console.log("RAY!!! 3dSignalWireLayerName: B.  ", layerName)
+              tempColor = this.colorSignalBottom;
+              console.log("RAY!!! Bottom Color:  ", tempColor)
+              }
+
+            var lineCap = 'round';
+            // user may override the round cap, so take into account
+
+            // contains all paths for each individual signal
+            // so we can join them at the end
+            var signalArr = [];
+
+            for (var signalKey in this.eagle.signalItems) {
+
+                var signalLayers = this.eagle.signalItems[signalKey],
+                    layerItems = signalLayers[layer.number];
+                if (!layerItems) {
+                    continue;
+                }
+                //console.log("layerItems:", layerItems);
+                var layerWires = layerItems['wires'] || [];
+                
+                console.log("layerWires:", layerWires);
+                
+                // create mondo storage
+                if (this.clipperBySignalKey[signalKey] === undefined)
+                    this.clipperBySignalKey[signalKey] = {};
+                this.clipperBySignalKey[signalKey].layer = layer;
+                this.clipperBySignalKey[signalKey].wire = {};
+                
+                var that = this;
+
+                // per signal wire centipede
+                var centipede = [];
+
+                var scale = 10000;
+                var that = this;
+
+                layerWires.forEach(function (wire) {
+                    //console.log("drawing wires. wire:", wire);
+
+                    // use new util function
+                    var sol_paths = that.addStrokeCapsToLine(wire.x1, wire.y1, wire.x2, wire.y2, wire.width);
+                    //that.drawClipperPaths(sol_paths, that.colorSignal, 0.2);
+
+                    //console.log("about to add sol_paths to centipede:", sol_paths);
+                    centipede.push(sol_paths[0]);
+                    wire.clipper = sol_paths[0];
+
+                });
+
+                // merge centipede array of signals into single object
+                // do a union with Clipper.js
+                var sol_paths = this.getUnionOfClipperPaths(centipede);
+                //this.drawClipperPaths(sol_paths, this.colorSignal, 0.2);
+                
+                // we can get holes in sol_paths. it's rare but if a user created
+                // their board in such a way that they created a circle with their
+                // wires, we get a hole here. that means we need to separate those
+                // out before asking Three.js to draw the shape because it's not smart
+                // enough to look at winding order of the paths like Clipper.js is
+                var sol_pathsOuter = [];
+                var sol_pathsHoles = [];
+                sol_paths.forEach(function(path) {
+                    if (ClipperLib.Clipper.Orientation(path)) {
+                        sol_pathsOuter.push(path);
+                    } else {
+                        sol_pathsHoles.push(path);
+                    }
+                }, this);
+                // debug draw
+                if (sol_pathsHoles.length > 0) {
+                    console.log("Found signal wire path with holes:", sol_pathsHoles, "paths:", sol_pathsOuter, "signalKey:", signalKey);
+                    //this.drawClipperPaths(sol_pathsOuter, 0x0000ff, 0.99, 0);
+                    //this.drawClipperPaths(sol_pathsHoles, 0xff0000, 0.99, 0);
+                }
+                
+                // remove holes from each path even though that's redundant
+                // Three.js seems to handle this ok as when it calculates triangles
+                // it just sees the hole is nowhere near the triangles and moves on
+                var mesh = this.createClipperPathsAsMesh(sol_pathsOuter, tempColor, this.opacitySignal, sol_pathsHoles);
+                // slide signal wire down a tinge on z
+                // to make rendering prettier
+                mesh.position.set(0, 0, -0.00001);
+
+                // on layers other than top, we have to possibly apply a rotation/flip
+                //debugger;
+                if (layer == "Bottom") {
+                    // flip in Y axis
+                    var mS = (new THREE.Matrix4()).identity();
+                    //set -1 to the corresponding axis
+                    mS.elements[0] = -1;
+                    //mS.elements[5] = -1;
+                    //mS.elements[10] = -1;
+
+                    mesh.applyMatrix(mS);
+                }
+
+                // FINALLY. AFTER ALL THAT WORK. LETS ACTUALLY SHOW THE DARN USER THE
+                // BEAUTIFUL 3D OBJECTS WE CREATED
+                mesh.position.set(0,0,-0.00001);
+                this.sceneAdd(mesh);
+                
+                // add userData for intersect
+                mesh.userData.type = "signal";
+                mesh.userData.name = signalKey;
+                //mesh.userData.wire = wire;
+                mesh.userData.signalKey = signalKey;
+                mesh.userData.layerWires = layerWires;
+                mesh.userData.signalLayers = signalLayers;
+                mesh.userData.layerItems = layerItems;
+                mesh.userData.layer = layer;
+                //mesh.computeFaceNormals();
+                //console.log("just added signal mesh to intersectObjects. mesh:", mesh);
+                this.intersectObjects.push(mesh);
+
+                // create record of this union'ed signal wire
+                var ctr = 0;
+                sol_paths.forEach(function (path) {
+                    that.clipperSignalWires[signalKey + "-" + ctr] = path;
+                    ctr++;
+                });
+
+                // add to mondo object
+                this.clipperBySignalKey[signalKey].wire = {
+                    clipper: sol_paths,
+                    wires: layerWires,
+                    threeObj: mesh
+                };
+
+            }
+            console.log("final list of clipper signal wires:", this.clipperSignalWires);
+            console.log("this.clipperBySignalKey[]:", this.clipperBySignalKey);
+            console.groupEnd();
+        },
+        draw3dSignalPolygons: function (layer) {
+
+            if (!layer) {
+                return;
+            }
+
+            console.group("draw3dSignalPolygons");
+            console.log("layer:", layer);
+            
+            var layerNumber = layer.number;
+
+            // contains all paths for each individual polygon
+            // so we can join them at the end
+            var polyArr = [];
+
+            for (var signalKey in this.eagle.signalItems) {
+
+                var signalLayers = this.eagle.signalItems[signalKey],
+                    layerItems = signalLayers[layer.number];
+                if (!layerItems) {
+                    continue;
+                }
+                //console.log("layerItems:", layerItems);
+                var layerPolys = layerItems['polygons'] || [];
+                
+                if (layerPolys.length == 0) continue;
+                console.log("layerPolys:", layerPolys);
+                
+                // create mondo storage
+                if (this.clipperBySignalKey[signalKey] === undefined)
+                    this.clipperBySignalKey[signalKey] = {};
+                this.clipperBySignalKey[signalKey].layer = layer;
+                //this.clipperBySignalKey[signalKey].polys = [];
+                
+                var that = this;
+
+                // centipede is not the right reference here, but
+                // if the user did multiple polygon pours for this signalKey,
+                // i.e. GND, then we want all of these to act like one
+                // clipper path with multiple polygons
+                var centipede = [];
+                
+                if (layerPolys.length > 1) {
+                    //console.error("have more than one polygon in a signal. need to test this. layerPolys:", layerPolys);
+                }
+                
+                layerPolys.forEach(function (poly) {
+                    console.log("drawing polys. poly:", poly);
+
+                    var clipperPoly = [];
+                    
+                    poly.vertices.forEach(function(v) {
+                        clipperPoly.push({X:v.x, Y:v.y});
+                    });
+                    
+                    // store in eagle obj for retrieval from mondo object
+                    // later
+                    poly.clipper = clipperPoly;    
+                    
+                    // not sure if merging these will work if multiple
+                    // polys in one signal with different ranks,
+                    // will have to test
+                    centipede.push(clipperPoly);                   
+
+                });
+                console.log("poly centipede:", centipede);
+                
+                // merge centipede array of signals into single object
+                // do a union with Clipper.js
+                var sol_paths = this.getUnionOfClipperPaths(centipede);
+                //this.drawClipperPaths(sol_paths, this.colorSignal, 0.2);
+                var mesh = this.createClipperPathsAsMesh(sol_paths, this.colorSignal, this.opacitySignal * 0.6);
+                // slide signal wire down a tinge on z
+                // to make rendering prettier
+                mesh.position.set(0,0,0.00001);
+                this.sceneAdd(mesh);
+                
+                // add userData for intersect
+                mesh.userData.type = "poly";
+                mesh.userData.name = signalKey;
+                //mesh.userData.wire = wire;
+                mesh.userData.signalKey = signalKey;
+                mesh.userData.layerWires = layerPolys;
+                mesh.userData.signalLayers = signalLayers;
+                mesh.userData.layerItems = layerItems;
+                mesh.userData.layer = layer;
+                //mesh.computeFaceNormals();
+                //console.log("just added signal mesh to intersectObjects. mesh:", mesh);
+                //this.intersectObjects.push(mesh);
+
+                // create record of this union'ed signal wire
+                var ctr = 0;
+                sol_paths.forEach(function (path) {
+                    that.clipperSignalPolys[signalKey + "-" + ctr] = path;
+                    ctr++;
+                });
+
+                // add to mondo object
+                this.clipperBySignalKey[signalKey].poly = {
+                    clipper: sol_paths,
+                    polys: layerPolys,
+                    threeObj: mesh
+                };
+
+            }
+            console.log("final list of clipper signal polys:", this.clipperSignalPolys);
+            console.log("clipperBySignalKey:", this.clipperBySignalKey);
+            console.groupEnd();
+        },
+        clipperElements: [], // holds clipper formatted paths
+        clipperPads: [], // subset of elements (pads)
+        clipperSmds: [], // subset of elements (smds)
+        clipperVias: [], // subset of elements (vias)
+        drillPads: {}, // save all pad drill vectors
+        drillVias: {}, // save all via drill vectors
+        draw3dElements: function (layer) {
+
+            if (!layer) return;
+
+            console.group("draw3dElements");
+
+            var that = this;
+
+            for (var elemKey in this.eagle.elements) {
+                var elem = this.eagle.elements[elemKey];
+                console.log("working on element:", elem);
+                console.log("ray: elemKey:  ", elemKey, "  elem.mirror:  ", elem.mirror);
+                console.log("activeLayer:  ", this.activeLayer)
+                var renderThisPad;
+                if ((elem.mirror == false && this.activeLayer == 'Top') || (elem.mirror == true && this.activeLayer == 'Bottom')  )
+                { //|| (pad.drill && pad.drill > 0)
+                	renderThisPad = true;
+                	console.log ("ray:  this part is on the active layer:", elemKey);
+                }
+                else
+                {
+                	renderThisPad = false;
+                }
+                console.log("pad.drill = ");  //, pad.drill
+                //renderThisPad = true;
+                
+								
+                // store clipper formatted points for this element
+                //this.clipperElements[elemKey] = [];
+								
+                var pkg = this.eagle.packagesByName[elem.pkg];
+                var rotMat = elem.matrix;
+								
+                // loop thru smds
+                var padCtr = 0;
+                var smdgroup = new THREE.Object3D();
+								
+                // insert smdgroup three.js obj into pkg
+                //pkg["threeObj"] = smdgroup;
+                elem["threeObj"] = {};
+                elem["threeObj"]["smdgroup"] = smdgroup;
+                elem["threeObj"]["smds"] = {};
+
+                // CALCULATING SMDS
+                if (renderThisPad) {
+                pkg.smds.forEach(function (smd) {
+
+                    console.log("drawing smd:", smd);
+                    var layerNum = smd.layer;
+
+                    /*
+                    if (elem.mirror) {
+                        console.log("mirror, since this elem is mirrored, we're getting the mirrorLayer from the eagle object. layerNum prior:", layerNum);
+                        layerNum = this.eagle.mirrorLayer(layerNum);
+                        console.log("mirror layerNum after:", layerNum);
+                    }
+                    */
+                    /*
+                    if (layer.number != layerNum) {
+                        return;
+                    }*/
+
+                    var lineGeo = new THREE.Geometry();
+                    var w2 = smd.dx / 2;
+                    var h2 = smd.dy / 2;
+                    lineGeo.vertices.push(new THREE.Vector3(w2 * -1, h2 * -1, 0));
+                    lineGeo.vertices.push(new THREE.Vector3(w2, h2 * -1, 0));
+                    lineGeo.vertices.push(new THREE.Vector3(w2, h2, 0));
+                    lineGeo.vertices.push(new THREE.Vector3(w2 * -1, h2, 0));
+                    // close it by connecting last point to 1st point
+                    lineGeo.vertices.push(new THREE.Vector3(w2 * -1, h2 * -1, 0));
+
+                    var lineMat = new THREE.LineBasicMaterial({
+                        color: that.colorSignal,
+                        transparent: true,
+                        opacity: 0.2
+                    });
+                    var line = new THREE.Line(lineGeo, lineMat);
+
+                    // do smd as mesh instead
+                    lineMat = new THREE.MeshBasicMaterial({
+                        color: that.colorSignal,
+                        transparent: true,
+                        opacity: 0.2,
+                        side: THREE.DoubleSide,
+                        //overdraw: false,
+                        //polygonOffset: true,
+                        depthWrite: false
+                    });
+                    //lineMat.side = THREE.DoubleSided;
+                    var holes = [];
+                    var triangles = THREE.Shape.Utils.triangulateShape(lineGeo.vertices, holes);
+
+                    for (var i = 0; i < triangles.length; i++) {
+
+                        lineGeo.faces.push(new THREE.Face3(triangles[i][0], triangles[i][1], triangles[i][2]));
+
+                    }
+                    //lineGeo.faces.push( new THREE.Face3( 0, 1, 2 ) );
+                    lineGeo.computeFaceNormals();
+                    line = new THREE.Mesh(lineGeo, lineMat);
+
+                    // add smd mesh to be found on mouse movements
+                    this.intersectObjects.push(line);
+
+                    // rotate
+                    // now that the smd is drawn, apply its individual
+                    // rotation
+                    if ('rot' in smd && smd.rot != null) {
+                        var rot = parseInt(smd.rot.replace(/R/i, ""));
+                        //console.log("will rotate individual smd by deg:", rot);
+                        if (rot > 0) {
+                            var r = (Math.PI / 180) * rot;
+                            //console.log("we are rotating individual smd by radians:", r);
+                            var axis = new THREE.Vector3(0, 0, 1);
+                            that.rotateAroundObjectAxis(line, axis, r);
+                        }
+                    }
+
+                    // set smd's x/y
+                    line.position.set(smd.x, smd.y, 0);
+                    line.userData["smdName"] = smd.name;
+                    line.userData["smd"] = smd;
+                    //line.userData["elemKey"] = elemKey;
+                    line.userData["elem"] = elem;
+                    //line.userData['pkgKey'] = elem.pkg;
+                    line.userData['pkg'] = pkg;
+                    line.userData["type"] = "smd";
+                    //console.log("adding smd line with userData:", line);
+
+                    // add this three.js obj to smd
+                    //smd["threeObj"] = line;
+                    elem["threeObj"]["smds"][smd.name] = line;
+
+                    smdgroup.add(line);
+                    //that.sceneAdd(line);
+                    //group.add(line);
+
+                    padCtr++;
+
+                }, this);
+                
+
+                /*
+                if (elem.rot.match(/M/i)) {
+                  var axis = new THREE.Vector3(0, 1, 0);
+                       var r = (Math.PI / 180) * 180;
+                       that.rotateAroundObjectAxis(padgroup, axis, r);
+                       console.log ("ray: M matched");
+
+                }*/
+                //var t = "M270"; console.log( parseInt(t.replace(/\D+/i,'')) )
+
+                // now rotate and position the smdgroup
+                //smdgroup
+                if ('rot' in elem && elem.rot != null) {
+                    //var rot = parseInt(elem.rot.replace(/R/i, ""));
+                    var rot = parseInt(elem.rot.replace(/\D+/i,''));
+
+                    console.log("(r2) will rotate pkg smd by deg:", rot);
+                    if (rot > 0) {
+                        var r = (Math.PI / 180) * rot;
+                        //console.log("we are rotating pkg smd by radians:", r);
+                        var axis = new THREE.Vector3(0, 0, 1);
+                        that.rotateAroundObjectAxis(smdgroup, axis, r);
+                    }
+                }
+                
+
+                // see if smd group is mirrored
+                //console.log("checking if elem is mirrored. elem:", elem);
+
+
+                /*
+                if (elem.rot.match(/M/i)) {
+                  var axis = new THREE.Vector3(0, 1, 0);
+                       that.rotateAroundObjectAxis(padgroup, axis, 180);
+                       console.log ("ray: M matched");
+
+                }
+                */
+
+                
+                if (elem.mirror) {
+                    //console.log("smdgroup elem is mirrored");
+                    var mS = (new THREE.Matrix4()).identity();
+                    //set -1 to the corresponding axis
+                    mS.elements[0] = -1;
+                    //mS.elements[5] = -1;
+                    //mS.elements[10] = -1;
+                    
+                    smdgroup.applyMatrix(mS);
+                    //mesh.applyMatrix(mS);
+                    //object.applyMatrix(mS);
+                }
+                
+                } // (if renderThisPad) ends here
+                
+
+                // set position
+                smdgroup.position.set(elem.x, elem.y, 0);
+                that.sceneAdd(smdgroup);
+                
+
+                // store as a clipper path for later union'ing
+                var temparr = [];
+                // store clipper union'ed smds into elem
+                elem["threeObj"]["smdsClipperFmt"] = {};
+                smdgroup.updateMatrixWorld();
+                var lineCtr = 0;
+                smdgroup.children.forEach(function (line) {
+                    //console.log("line in group:", line);
+                    temparr[lineCtr] = [];
+                    line.geometry.vertices.forEach(function (v) {
+                        //line.updateMatrixWorld();
+                        //console.log("pushing v onto clipper:", v);
+                        var vector = v.clone();
+                        //vector.applyMatrix( group.matrixWorld );
+                        var vec = line.localToWorld(vector);
+                        if (!(elemKey + "-" + lineCtr in this.clipperElements)) this.clipperElements[elemKey + "-" + lineCtr] = [];
+                        this.clipperElements[elemKey + "-" + lineCtr].push({
+                            X: vec.x,
+                            Y: vec.y
+                        });
+                        temparr[lineCtr].push({
+                            X: vec.x,
+                            Y: vec.y
+                        });
+                        elem["threeObj"]["smdsClipperFmt"][line.userData.smd.name] = temparr[lineCtr];
+                        
+                    }, this);
+                    
+                    // push onto mondo object, which is sorted by signal name
+                    // so we're pushing an smd into an alternate hierarchy
+                    var ud = line.userData;
+                    var signalKey = ud.elem.padSignals[ud.smd.name];
+                    // add to mondo object
+                    if (this.clipperBySignalKey[signalKey] === undefined)
+                        this.clipperBySignalKey[signalKey] = {};
+                    if (this.clipperBySignalKey[signalKey].smds === undefined)
+                        this.clipperBySignalKey[signalKey].smds = [];
+                    var clipperPath = temparr[lineCtr];
+                    // remove last point because it closes the object, but on clipper
+                    // paths it assumes to close the polygon
+                    clipperPath.pop();
+                    this.clipperBySignalKey[signalKey].smds.push({
+                        clipper: temparr[lineCtr],
+                        smd: ud.smd,
+                        threeObj: line,
+                        threeObjSmdGroup: smdgroup
+                    });
+                    
+                    lineCtr++;
+                }, this);
+								
+                // draw temp union of smd
+                temparr.forEach(function (d) {
+                    this.clipperSmds.push(d);
+                    
+                }, this);
+                
+                //this.clipperSmds.push(temparr);
+                //console.log("just stored clipperSmds:", this.clipperSmds);
+                /*
+                console.log("temparr:", temparr);
+                var sol_paths = this.getUnionOfClipperPaths(temparr);
+                var infl_path = this.getInflatePath(sol_paths, 0.1);
+                this.drawClipperPaths(infl_path, 0x00ffff, 1.0);
+                */
+
+                // CALCULATING PADS
+                
+                // do pads
+                
+                var padgroup = new THREE.Object3D();
+                elem["threeObj"]["padgroup"] = padgroup;
+                elem["threeObj"]["pads"] = {};
+                elem["threeObj"]["padsAsLines"] = {};
+                elem["threeObj"]["padsAsMesh"] = {};
+                
+                //if (renderThisPad) {
+                pkg.pads.forEach(function (pad) {
+                    console.log("working on pad for layer. pad:", pad, "layer:", layer);
+
+
+                    // pads are circles by default, but could be squares or octagons
+                    var group = new THREE.Object3D();
+                    //var groupMesh = new THREE.Object3D();
+
+                    elem["threeObj"]["padsAsLines"][pad.name] = group;
+
+                    elem["threeObj"]["padsAsMesh"][pad.name] = null;
+
+                    if (pad.shape == "square") {
+                        
+                        // check if diameter is there. if not create assumption
+                        if (pad.diameter == null || isNaN(pad.diameter)) {
+                            //console.warn("found pad without diameter. pad:", pad);
+                            // base assumption on drill width
+                            if (pad.drill && pad.drill > 0) {
+                                // we have something to base our size on
+                                pad.diameter = pad.drill * 2;
+                            } else {
+                                console.error("no way to determine pad size for pad:", pad);
+                            }
+                        }
+                        
+                        var lineGeo = new THREE.Geometry();
+                        var w = pad.diameter / 2;
+
+                        lineGeo.vertices.push(new THREE.Vector3(0 - w, 0 - w, 0));
+                        lineGeo.vertices.push(new THREE.Vector3(0 + w, 0 - w, 0));
+                        lineGeo.vertices.push(new THREE.Vector3(0 + w, 0 + w, 0));
+                        lineGeo.vertices.push(new THREE.Vector3(0 - w, 0 + w, 0));
+                        // close it by connecting last point to 1st point
+                        lineGeo.vertices.push(new THREE.Vector3(0 - w, 0 - w, 0));
+
+                        var lineMat = new THREE.LineBasicMaterial({
+                            color: that.colorPad,
+                            transparent: true,
+                            opacity: 0.2
+                        });
+                        var line = new THREE.Line(lineGeo, lineMat);
+                        group.add(line);
+
+
+                    } else if (pad.shape == "octagon") {
+
+                        // use circle geometry shortcut, but create only 8 segments
+                        //console.log("generating octagon via circle. pad:", pad);
+
+                        // check if diameter is there. if not create assumption
+                        if (pad.diameter == null || isNaN(pad.diameter)) {
+                            //console.warn("found pad without diameter. pad:", pad);
+                            // base assumption on drill width
+                            if (pad.drill && pad.drill > 0) {
+                                // we have something to base our size on
+                                pad.diameter = pad.drill * 2;
+                            } else {
+                                console.error("no way to determine pad size for pad:", pad);
+                            }
+                        }
+                        
+                        var radius = pad.diameter / 2;
+                        var segments = 8; // not 1 extra for center vertex
+                        var material = new THREE.LineBasicMaterial({
+                            color: that.colorPad,
+                            transparent: true,
+                            opacity: 0.2
+                        });
+                        var geometry = new THREE.CircleGeometry(radius, segments, Math.PI / 8, Math.PI * 2);
+
+                        // Remove center vertex
+                        geometry.vertices.shift();
+
+                        var lineCircle = new THREE.Line(geometry, material);
+
+                        group.add(lineCircle);
+
+
+                    } else if (pad.shape == "long") {
+
+                        //debugger;
+                        // the long pad height is 3x diameter of drill
+                        // the width is 2x diam of drill
+                        // unless the user specified the diameter (then use that)
+                        //var group = new THREE.Object3D();
+
+                        var lineMat = new THREE.LineBasicMaterial({
+                            color: that.colorPad,
+                            transparent: true,
+                            opacity: 0.2
+                        });
+
+                        var dia = pad.diameter;
+                        if (!dia > 0) {
+                            // no diam. using auto
+                            dia = pad.drill * 1.5;
+                        }
+                        var w = dia; // width of square and circles
+
+                        // could draw circle top, circle bottom, then square, then do union
+                        var radius = dia / 2;
+                        var segments = 24;
+                        var circleGeo = new THREE.CircleGeometry(radius, segments);
+                        // Remove center vertex
+                        circleGeo.vertices.shift();
+
+                        var circle = new THREE.Line(circleGeo, lineMat);
+                        // clone the circle
+                        var circle2 = circle.clone();
+
+                        // shift left (rotate 0 is left/right)
+                        var shiftX = radius * -1;
+                        //shiftX = shiftX + pad.x;
+                        var shiftY = 0;
+                        //shiftY = shiftY + pad.y;
+                        circle.position.set(shiftX, shiftY, 0);
+                        group.add(circle);
+                        // shift right
+                        var shiftX = radius * 1;
+                        //shiftX = shiftX + pad.x;
+                        var shiftY = 0;
+                        //shiftY = shiftY + pad.y;
+                        circle2.position.set(shiftX, shiftY, 0);
+                        group.add(circle2);
+
+                        // add a square to middle
+                        var lineGeo = new THREE.Geometry();
+                        w = w / 2;
+                        lineGeo.vertices.push(new THREE.Vector3(0 - w, 0 - w, 0));
+                        lineGeo.vertices.push(new THREE.Vector3(0 + w, 0 - w, 0));
+                        lineGeo.vertices.push(new THREE.Vector3(0 + w, 0 + w, 0));
+                        lineGeo.vertices.push(new THREE.Vector3(0 - w, 0 + w, 0));
+                        // close it by connecting last point to 1st point
+                        lineGeo.vertices.push(new THREE.Vector3(0 - w, 0 - w, 0));
+                        var line = new THREE.Line(lineGeo, lineMat);
+                        //group.position.set(pad.x, pad.y, 0);
+                        group.add(line);
+
+                    } else {
+                        //console.log("generating circle. pad:", pad);
+
+                        if (isNaN(pad.diameter)) {
+                            //console.log("no diam specified. use auto formula");
+                            pad.diameter = pad.drill * 2;
+                        }
+                        var radius = pad.diameter / 2,
+                            segments = 32,
+                            material = new THREE.LineBasicMaterial({
+                                color: that.colorPad,
+                                transparent: true,
+                                opacity: 0.2
+                            }),
+                            geometry = new THREE.CircleGeometry(radius, segments);
+
+                        // Remove center vertex
+                        geometry.vertices.shift();
+
+                        // shift to xy pos
+                        var lineCircle = new THREE.Line(geometry, material);
+                        //lineCircle.position.set(pad.x, pad.y, 0);
+
+                        //lineCircle.rotateX(90);
+
+                        //that.sceneAdd( lineCircle );
+                        group.add(lineCircle);
+                    }
+
+
+                    // now draw the drill as dimension (not as standalone)
+                    /*
+                    var radius = pad.drill / 2;
+                    var segments = 24;
+                    var circleGeo = new THREE.CircleGeometry(radius, segments);
+                    circleGeo.vertices.shift(); // remove center vertex
+                    var drillMat = new THREE.LineBasicMaterial({
+                        color: that.colorHole,
+                    });
+                    var drillLine = new THREE.Line(circleGeo, drillMat);
+                    drillLine.position.set(elem.x + pad.x, elem.y + pad.y, 0);
+                    drillLine.userData["type"] = "drill";
+
+                    group.add(drillLine);
+                    //that.sceneAdd(drillLine);
+                    */
+
+                    // now that the pad is drawn, apply its individual
+                    // rotation
+                    if ('rot' in pad && pad.rot != null) {
+                        var rot = parseInt(pad.rot.replace(/R/i, ""));
+                        //console.log("will rotate individual pad by deg:", rot);
+                        if (rot > 0) {
+                            var r = (Math.PI / 180) * rot;
+                            //console.log("we are rotating individual pad by radians:", r);
+                            var axis = new THREE.Vector3(0, 0, 1);
+                            that.rotateAroundObjectAxis(group, axis, r);
+                        }
+                    }
+
+                    // set pad's x/y
+                    group.position.set(pad.x, pad.y, 0);
+
+                    // set some userData on group for this pad
+                    group.userData["type"] = "pad";
+                    group.userData["elem"] = elem;
+                    group.userData["pkg"] = pkg;
+                    group.userData["pad"] = pad;
+
+                    // ok, finally add to padgroup
+                    padgroup.add(group);
+
+                });
+                
+
+                // now position the pads for the element's pos, mirror, and rotation
+                
+                // see if padgroup rotated
+                if (elem.rot.match(/R(\d+)/i)) {
+                    // there is a rotation
+                    var rotTxt = RegExp.$1;
+                    var rot = parseInt(rotTxt);
+                    console.log("padgroup: will rotate pad by deg:", rot);
+                    if (rot > 0) {
+                        var r = (Math.PI / 180) * rot;
+                        //console.log("we are rotating by radians:", r);
+                        var axis = new THREE.Vector3(0, 0, 1);
+                        that.rotateAroundObjectAxis(padgroup, axis, r);
+                    }
+                }
+                
+
+                // see if pad group is mirrored
+                //console.log("checking if pad elem is mirrored. elem:", elem);
+                if (elem.mirror) {
+                    //console.log("padgroup:  elem is mirrored. elem:", elem, "pkg:", pkg);
+                    var mS = (new THREE.Matrix4()).identity();
+                    //set -1 to the corresponding axis
+                    mS.elements[0] = -1;
+                    //mS.elements[5] = -1;
+                    //mS.elements[10] = -1;
+                    
+                    padgroup.applyMatrix(mS);
+                    //mesh.applyMatrix(mS);
+                    //object.applyMatrix(mS);
+                }
+                //} // (if renderThisPad) ends here
+
+                
+                // set padgroup's x/y
+                padgroup.position.set(elem.x, elem.y, 0);
+                //that.sceneAdd(padgroup);
+                
+                // Now convert the Three.js drawn padgroup to a Clipper path
+                // so we can do cool stuff like inflate/deflate and union/intersect
+                // it. To convert we need to updateMatrixWorld() for three.js to calculate
+                // all the absolute coordinates for us.
+                
+                // add to Clipper list for later union'ing
+                //console.log("group vertices:", padgroup);
+                padgroup.updateMatrixWorld();
+                var temparr = [];
+                var padCtr = 0;
+                var lineCtr = 0;
+                padgroup.children.forEach(function (group) {
+                    group.updateMatrixWorld();
+
+                    // store the vertices into this mesh
+                    // array. we'll union them and then
+                    // create a mesh. then subtract the drill
+                    var meshArr = [];
+                    var meshHoleArr = [];
+                    var meshCtr = 0;
+
+                    group.children.forEach(function (line) {
+                        //console.log("line in group:", line);
+                        temparr[lineCtr] = [];
+                        var firstMeshPt = null;
+                        var firstMeshHolePt = null;
+                        meshArr[meshCtr] = [];
+
+                        // Get absolute coordinates from drill hole
+                        // in an element
+                        if( line.position.x == 0 ){ // only middle point holes
+                           var vector = new THREE.Vector3();
+                           vector.setFromMatrixPosition( line.matrixWorld  );
+                           // Most exists only drills with diameter 1.0 0.9 0.8 ...
+                           var drill = line.parent.userData.pad.drill;
+                           var shape = line.parent.userData.pad.shape;
+                           if(this.drillPads[drill.toFixed(1)] === undefined)
+                               this.drillPads[drill.toFixed(1)] = [];
+                           this.drillPads[drill.toFixed(1)].push({
+                               X: vector.x.toFixed(4),
+                               Y: vector.y.toFixed(4),
+                               D: drill.toFixed(4)
+                           });
+                           // New routine to draw a cirlce in threed
+                           this.sceneAdd( this.drawCircle(vector.x, vector.y, drill/2, this.colorHole ) );
+                           // drill hole --> end
+                         }
+                        
+                        line.geometry.vertices.forEach(function (v) {
+                            //console.log("pushing v onto clipper:", v);
+                            var vector = v.clone();
+                            //vector.applyMatrix( group.matrixWorld );
+                            var vec = line.localToWorld(vector);
+                            if (!(elemKey + "-" + lineCtr in this.clipperElements)) 
+                              this.clipperElements[elemKey + "-" + lineCtr] = [];
+
+                            this.clipperElements[elemKey + "-" + lineCtr].push({
+                                X: vec.x,
+                                Y: vec.y
+                            });
+                            temparr[lineCtr].push({
+                                X: vec.x,
+                                Y: vec.y
+                            });
+                            //elem["threeObj"]["pads"]
+                            var ptxy = {
+                                X: vec.x,
+                                Y: vec.y
+                            };
+                            if (line.userData.type == "drill") {
+
+                                meshHoleArr.push(ptxy);
+                                if (firstMeshHolePt == null) firstMeshHolePt = ptxy;
+                            } else {
+                                meshArr[meshCtr].push(ptxy);
+                                if (firstMeshPt == null) firstMeshPt = ptxy;
+                            }
+                        }, this);
+                        meshCtr++;
+                        // close the mesh and the hole
+                        //if (firstMeshPt != null) meshArr.push(firstMeshPt);
+                        //if (firstMeshHolePt != null) meshHoleArr.push(firstMeshHolePt);
+
+                        lineCtr++;
+                    }, this);
+
+                    //console.log("creating pad mesh for pad:");
+                    var shape = new THREE.Shape();
+                    
+                    // create a mesh for each group
+                    //var lineGeo = new THREE.Geometry();
+                    // we need to union the mesh first cuz it
+                    // could have sub-components like on long pads
+                    var sol_paths = this.getUnionOfClipperPaths(meshArr);
+                    var clipperOuterPath = sol_paths[0];
+                    //console.log("unionized mesh pts for meshArr:", sol_paths);
+                    var ptCtr = 0;
+                    sol_paths[0].forEach(function (pt) {
+                        if (ptCtr == 0) shape.moveTo(pt.X, pt.Y);
+                        else shape.lineTo(pt.X, pt.Y);
+                        //lineGeo.vertices.push(new THREE.Vector3(pt.X, pt.Y, 0));
+                        ptCtr++;
+                    }, this);
+                    //lineGeo.vertices.pop();
+                    // add first pt to close shape
+                    //lineGeo.vertices.push(new THREE.Vector3(sol_paths[0][0].X, sol_paths[0][0].Y, 0));
+
+                    /*
+                    var lineMat = new THREE.LineBasicMaterial({
+                        color: that.colorDimension,
+                        transparent: true,
+                        opacity: 0.5
+                    });
+                    var lines = new THREE.Line(lineGeo, lineMat);
+                    */
+                    //this.sceneAdd(lines);
+
+                    //var holeGeo = new THREE.Geometry();
+                    var hole = new THREE.Path();
+                    // console.log("about to calc holes. meshHoleArr:", meshHoleArr);
+
+                    if (meshHoleArr.length > 0) {
+                        var sol_paths = this.getUnionOfClipperPaths([meshHoleArr]);
+                        //console.log("unionized mesh pts for meshHoleArr:", sol_paths);
+                        var ptCtr = 0;
+                        //var revArr = sol_paths[0].reverse();
+                        sol_paths[0].forEach(function (pt) {
+                            //holeGeo.vertices.push(new THREE.Vector3(pt.X, pt.Y, 0));
+                            if (ptCtr == 0) hole.moveTo(pt.X, pt.Y);
+                            else hole.lineTo(pt.X, pt.Y);
+                            ptCtr++;
+                        }, this);
+                        shape.holes.push(hole);
+                    }
+                    //holeGeo.vertices.pop(); // remove last duplicate
+                    // add first pt to close hole
+                    //if (meshHoleArr.length > 0)
+                    //    holeGeo.vertices.push(new THREE.Vector3(meshHoleArr[0].X, meshHoleArr[0].Y, 0));
+                    //var holeLines = new THREE.Line(holeGeo, lineMat);
+                    //this.sceneAdd(holeLines);
+
+                    // create mesh version
+                    var meshMat = new THREE.MeshBasicMaterial({
+                        color: that.colorPad,
+                        transparent: true,
+                        opacity: 0.2,
+                        side: THREE.DoubleSide,
+                        depthWrite: false // so don't get rendering artifacts
+                    });
+                    //lineMat.side = THREE.DoubleSided;
+                    //var holes = [];
+
+                    /*
+                    console.log("about to triangulate pad mesh - holes. pad:", lineGeo, "holes:", holeGeo);
+                    var triangles = THREE.Shape.Utils.triangulateShape(lineGeo.vertices, [holeGeo.vertices]);
+                    console.log("triangles after calculating pad and remove holes:", triangles);
+                    for (var i = 0; i < triangles.length; i++) {
+
+                        lineGeo.faces.push(new THREE.Face3(triangles[i][0], triangles[i][1], triangles[i][2]));
+
+                    }
+                    //lineGeo.faces.push( new THREE.Face3( 0, 1, 2 ) );
+                    lineGeo.computeFaceNormals();
+                    var mesh = new THREE.Mesh(lineGeo, meshMat);
+                    */
+
+                    // using shape instead
+                    var geometry = new THREE.ShapeGeometry( shape );
+                    //var material = new THREE.MeshBasicMaterial({color:0xffccff, side:2, overdraw:true} );
+                    var mesh = new THREE.Mesh(geometry, meshMat );
+                    
+                    // we now have a mesh representation of this
+                    // pad. let's save it for later use.
+                    //console.log("done working on pad mesh:", mesh);
+                    elem["threeObj"]["padsAsMesh"][group.userData.pad.name] = mesh;
+                    mesh.userData["type"] = "pad";
+                    mesh.userData["elem"] = group.userData.elem;
+                    mesh.userData["pkg"] = group.userData.pkg;
+                    mesh.userData["pad"] = group.userData.pad;
+                    this.sceneAdd(mesh);
+                    
+                    // add that these get detected during
+                    // mouseover
+                    this.intersectObjects.push(mesh);
+
+                    // push onto mondo object, which is sorted by signal name
+                    // so we're pushing an smd into an alternate hierarchy
+                    var ud = mesh.userData;
+                    var signalKey = ud.elem.padSignals[ud.pad.name];
+                    // add to mondo object
+                    if (this.clipperBySignalKey[signalKey] === undefined)
+                        this.clipperBySignalKey[signalKey] = {};
+                    if (this.clipperBySignalKey[signalKey].pads === undefined)
+                        this.clipperBySignalKey[signalKey].pads = [];
+                    this.clipperBySignalKey[signalKey].pads.push({
+                        clipper: clipperOuterPath,
+                        pad: ud.pad,
+                        threeObj: mesh,
+                        threeObjPadGroup: padgroup
+                    });
+                    
+                }, this);
+
+                // draw temp union of padgroup
+                temparr.forEach(function (d) {
+                    this.clipperPads.push(d);
+                }, this);
+                /*
+                console.log("padgroup temparr:", temparr);
+                var sol_paths = this.getUnionOfClipperPaths(temparr);
+                var infl_path = this.getInflatePath(sol_paths, 0.1);
+                this.drawClipperPaths(infl_path, 0x00ffff, 1.0);
+                */
+
+                // so far wires in a pkg are for tPlace and tDocu, not
+                // for milling, so not an important part to solve
+                pkg.wires.forEach(function (wire) {
+                    var layerNum = wire.layer;
+
+                    if (elem.mirror) {
+                        layerNum = this.eagle.mirrorLayer(layerNum);
+                    }
+                    if (layer.number != layerNum) {
+                        return;
+                    }
+                    //console.log("pkg wire:", wire);
+
+                    var x1 = elem.x + rotMat[0] * wire.x1 + rotMat[1] * wire.y1,
+                        y1 = elem.y + rotMat[2] * wire.x1 + rotMat[3] * wire.y1,
+                        x2 = elem.x + rotMat[0] * wire.x2 + rotMat[1] * wire.y2,
+                        y2 = elem.y + rotMat[2] * wire.x2 + rotMat[3] * wire.y2;
+
+                    var lineGeo = new THREE.Geometry();
+                    lineGeo.vertices.push(new THREE.Vector3(x1, y1, 0));
+                    lineGeo.vertices.push(new THREE.Vector3(x2, y2, 0));
+
+                    // close it by connecting last point to 1st point
+                    //lineGeo.vertices.push(new THREE.Vector3(x1, y1, 0));
+                    if (!color) var color = 0xff0000;
+                    var lineMat = new THREE.LineBasicMaterial({
+                        color: color,
+                        transparent: true,
+                        opacity: 0.5
+                    });
+                    var line = new THREE.Line(lineGeo, lineMat);
+                    that.sceneAdd(line);
+
+                }, this);
+
+
+                /*
+                var smashed = elem.smashed,
+                    textCollection = smashed ? elem.attributes : pkg.texts; //smashed : use element attributes instead of package texts
+                for (var textIdx in textCollection) {
+                    var text = textCollection[textIdx];
+                    var layerNum = text.layer;
+                    if ((!elem.smashed) && (elem.mirror)) { 
+                        layerNum = this.mirrorLayer(layerNum); 
+                    }
+                    if (layer.number != layerNum) { continue; }
+                    
+                    var content = smashed ? null : text.content,
+                        attribNameF = smashed ? text.name : ((text.content.indexOf('>') == 0) ? text.content.substring(1) : null);
+                    if (attribName == "NAME")  { content = elem.name;  }
+                    if (attribName == "VALUE") { content = elem.value; }
+                    if (!content) { continue; }
+                    
+                    var x = smashed ? text.x : (elem.x + rotMat[0]*text.x + rotMat[1]*text.y),
+                        y = smashed ? text.y : (elem.y + rotMat[2]*text.x + rotMat[3]*text.y),
+                        rot = smashed ? text.rot : elem.rot,
+                        size = text.size;
+                    
+                    //rotation from 90.1 to 270 causes Eagle to draw labels 180 degrees rotated with top right anchor point
+                    var degrees  = parseFloat(rot.substring((rot.indexOf('M')==0) ? 2 : 1)),
+                        flipText = ((degrees > 90) && (degrees <=270)),
+                        textRot  = this.matrixForRot(rot),
+                        fontSize = 10;
+                    
+                    ctx.save();
+                    ctx.fillStyle = color;
+                    ctx.font = ''+fontSize+'pt vector'; //Use a regular font size - very small sizes seem to mess up spacing / kerning
+                    ctx.translate(x,y);
+                    ctx.transform(textRot[0],textRot[2],textRot[1],textRot[3],0,0);
+                    var scale = size / fontSize;
+                    ctx.scale(scale,-scale);
+                    if (flipText) {
+                        var metrics = ctx.measureText(content);
+                        ctx.translate(metrics.width,-fontSize); //Height is not calculated - we'll use the font's 10pt size and hope it fits
+                        ctx.scale(-1,-1);
+                    }
+                    ctx.fillText(content, 0, 0);
+                    ctx.restore();
+                }
+                */
+            }
+            console.log("final list of clipper elements:", this.clipperElements);
+            console.log("this.eagle.elements with all threeObjs and clipperPaths", this.eagle.elements);
+            console.log("this.clipperBySignalKey", this.clipperBySignalKey);
+
+            console.groupEnd();
+        },
+        // Rotate an object around an arbitrary axis in object space
+        rotObjectMatrix: null,
+        rotateAroundObjectAxis: function (object, axis, radians) {
+            rotObjectMatrix = new THREE.Matrix4();
+            rotObjectMatrix.makeRotationAxis(axis.normalize(), radians);
+
+            // old code for Three.JS pre r54:
+            // object.matrix.multiplySelf(rotObjectMatrix);      // post-multiply
+            // new code for Three.JS r55+:
+            object.matrix.multiply(rotObjectMatrix);
+
+            // old code for Three.js pre r49:
+            // object.rotation.getRotationFromMatrix(object.matrix, object.scale);
+            // old code for Three.js r50-r58:
+            // object.rotation.setEulerFromRotationMatrix(object.matrix);
+            // new code for Three.js r59+:
+            object.rotation.setFromRotationMatrix(object.matrix);
+        },
+
+        rotWorldMatrix: null,
+        // Rotate an object around an arbitrary axis in world space       
+        rotateAroundWorldAxis: function (object, axis, radians) {
+            rotWorldMatrix = new THREE.Matrix4();
+            rotWorldMatrix.makeRotationAxis(axis.normalize(), radians);
+
+            // old code for Three.JS pre r54:
+            //  rotWorldMatrix.multiply(object.matrix);
+            // new code for Three.JS r55+:
+            rotWorldMatrix.multiply(object.matrix); // pre-multiply
+
+            object.matrix = rotWorldMatrix;
+
+            // old code for Three.js pre r49:
+            // object.rotation.getRotationFromMatrix(object.matrix, object.scale);
+            // old code for Three.js pre r59:
+            // object.rotation.setEulerFromRotationMatrix(object.matrix);
+            // code for r59+:
+            object.rotation.setFromRotationMatrix(object.matrix);
+        },
+        drawCircle: function (x, y, radius, color){
+            // draw a hole
+            var segments = 32,
+                material = new THREE.LineBasicMaterial( { color: color } ),
+                geometry = new THREE.CircleGeometry( radius, segments );
+            // Remove center vertex
+            geometry.vertices.shift();
+
+            var circle = new THREE.Line( geometry, material );
+            circle.position.set(x, y, 0);
+
+            return circle;
+        },
+        drawSphere: function (x, y, radius, color){
+            console.log("Sqhere position and color: ", x, y, color);
+            var segments = 16;
+            var material = new THREE.MeshBasicMaterial( { 
+                     color: color,
+                     wireframe : false,
+                     transparent: true,
+                     opacity: 0.5
+                  } ),
+                geometry = new THREE.SphereGeometry( radius, segments, segments, 0, Math.PI*2, 0, Math.PI/2); // HalfSphere
+             
+            var mesh = new THREE.Mesh( geometry, material ) ;
+            mesh.position.set(x, y, 0);
+            mesh.rotateX(Math.PI / 2); // 90 degrees
+            return mesh;
+        },
+        drawSquare: function (x1, y1, x2, y2) {
+
+            var square = new THREE.Geometry();
+
+            //set 4 points
+            square.vertices.push(new THREE.Vector3(x1, y2, 0));
+            square.vertices.push(new THREE.Vector3(x1, y1, 0));
+            square.vertices.push(new THREE.Vector3(x2, y1, 0));
+            square.vertices.push(new THREE.Vector3(x2, y2, 0));
+
+            //push 1 triangle
+            square.faces.push(new THREE.Face3(0, 1, 2));
+
+            //push another triangle
+            square.faces.push(new THREE.Face3(0, 3, 2));
+
+            //return the square object with BOTH faces
+            return square;
+        },
         mySceneGroup: null,
         sceneReAddMySceneGroup: function() {
             if (this.obj3d && this.mySceneGroup) {
@@ -2052,7 +3879,12 @@ onAddGcode : function(addGcodeCallback, gcodeParts, eagleWidget, helpDesc){
                 this.mySceneGroup.remove(obj);
             this.obj3dmeta.widget.wakeAnimate();
         },
-
+        draw: function (e) {
+            this.eagle.draw();
+        },
+        
+        
+        
         mostRecentSTL: null,
         onDropped: function (data, info) {
             console.log("onDropped. len of file:", data.length, "info:", info);
@@ -2095,8 +3927,7 @@ onAddGcode : function(addGcodeCallback, gcodeParts, eagleWidget, helpDesc){
                 }
                 //this.mostRecentSTL = this.parse_3d_file (info, data);
                 var vf_data;
-                //vf_data = this.parse_3d_file (info, data);
-                vf_data = this.parse_stl_ascii (data);
+                vf_data = this.parse_3d_file (info, data);
                 
                 var material=new THREE.MeshLambertMaterial({color:0x909090, overdraw: 1, wireframe: false, shading:THREE.FlatShading, vertexColors: THREE.FaceColors});
                 
