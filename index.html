@@ -155,8 +155,8 @@ requirejs.config({
         ThreeFontUtils: '//i2dcui.appspot.com/js/three/FontUtils',
         ThreeHelvetiker: '//i2dcui.appspot.com/js/three/threehelvetiker',
         Clipper: '//i2dcui.appspot.com/js/clipper/clipper_unminified',
-        //ThreeSTLLoader: '//i2dcui.appspot.com/geturl?url=http://threejs.org/examples/js/loaders/STLLoader.js'
-        ThreeSTLLoader: '//i2dcui.appspot.com/geturl?url=https://raw.githubusercontent.com/raykholo/library/master/stl_parse_load.js'
+        ThreeSTLLoader: '//i2dcui.appspot.com/geturl?url=http://threejs.org/examples/js/loaders/STLLoader.js'
+
    },
    shim: {
        ThreeTextGeometry: ['Three'],
@@ -377,7 +377,7 @@ onAddGcode : function(addGcodeCallback, gcodeParts, eagleWidget, helpDesc){
                 
             }
             
-            //this.setupUiFromLocalStorage();
+            this.setupUiFromLocalStorage();
 
             this.btnSetup();
 
@@ -394,17 +394,228 @@ onAddGcode : function(addGcodeCallback, gcodeParts, eagleWidget, helpDesc){
 
             this.setupMouseOver();
             
-            //this.setupAdvancedInflateByUI();
+            this.setupAdvancedInflateByUI();
             
             this.setupGcodeTab();
-            //this.setupFeedsDepths();
+            this.setupFeedsDepths();
             
             // setup clear button
             $('#com-chilipeppr-widget-eagle .btn-clear').click(this.clearEagleBrd.bind(this));
             
-            //this.draw3d();
+            
+            this.setupLayerToggleDropdown();
+            
 
             console.log(this.name + " done loading.");
+        },
+        setupLayerToggleDropdown: function() {
+        	$('#com-chilipeppr-widget-eagle .selectLayer').change(this.onChangeLayerToggleDropdown.bind(this));
+          console.log("r0:  ");
+        },
+        populateLayerToggleDropdown: function(){
+        	var selectLayerDropdown = $('#com-chilipeppr-widget-eagle .selectLayer');
+          var actionableLayers = [];
+          //var allSignals = Object.keys(this.eagle.signalItems);
+          var allSignals = this.eagle.signalItems;
+          console.log ("ray: allSignals:", allSignals)
+          //alert(allSignals[0]);
+          
+          for (var signalKeyR in this.eagle.signalItems) {
+          	var signalLayersR = this.eagle.signalItems[signalKeyR];
+            var sigKeyR = Object.keys(signalLayersR);
+            
+            for (i=0; i<sigKeyR.length; i++) {
+            var sigKeyAsInt = sigKeyR[i];
+    				console.log ("r2:  ", signalLayersR, "keys:", sigKeyR, "int:  ", sigKeyAsInt);
+            if (sigKeyAsInt > 0 && sigKeyAsInt <= 16) {  //brd layer is 1-16
+            	actionableLayers[sigKeyAsInt-1] = true;		 //-1 for array index
+              console.log ("layer true:  ", sigKeyAsInt);
+            }
+            else {
+            	actionableLayers[sigKeyAsInt-1] = false;
+              console.log ("layer false:  ", sigKeyAsInt);
+            }
+            }
+          }   //this function returns the layer # of each signal!!!
+          selectLayerDropdown.empty();
+          for (i = 0; i < 16; i++) {
+          	var loopingLayer = i+1; //brd layer # is 1 greater than index
+            if (actionableLayers[i] == true) {
+            	selectLayerDropdown.append($("<option />").text(this.eagle.layersByNumber[loopingLayer].name));
+              
+            console.log ("r3:  sent layer to dropdown:", this.eagle.layersByNumber[loopingLayer].name);
+            }
+            console.log("r3.5:  activeLayer:", this.activeLayer);
+            selectLayerDropdown.val(this.activeLayer);
+            
+          	
+          }
+        },
+        onChangeLayerToggleDropdown: function() {
+        	
+          var selectedLayerInDropdown = $("#com-chilipeppr-widget-eagle .selectLayer :selected").text();
+          //var activeLayer = this.layer.name;
+          //console.log("r4.9:  ", this.layer.name);
+          console.log("r5:  selected:", selectedLayerInDropdown);
+          /*console.log("r6:  ", activeLayer);
+          if (selectedLayerInDropdown != activeLayer) {
+          	console.log("r7:  Different");
+          }*/
+          var oldActiveLayer = this.activeLayer;
+          if (selectedLayerInDropdown != oldActiveLayer) {
+          	this.activeLayer=selectedLayerInDropdown;
+            console.log("r6:  layer active now", this.activeLayer);
+            //debugger;
+            //this.draw3dSignalWires [this.activeLayer];
+            this.clearEagleBrd();
+            this.draw3d();
+            //this.onRefresh();
+          }
+          //console.log("r5.5:  active before", oldActiveLayer);
+          //this.activeLayer=selectedLayerInDropdown;
+          //console.log("r6:  active now", this.activeLayer);
+          //console.log("r7:  layer.name", this.layer.name);
+          //this.onRefresh();
+          
+        /*
+        	var selectLayerDropdown = $('#com-chilipeppr-widget-eagle .selectLayer');
+          //var activeLayer= 'Top';  //Set as property around line 610, ignore this
+          selectLayerDropdown.change(function(){  //Just onchange for now
+          //$('#dropDownId :selected').text();	//Still need to write this jq to get dropdown selected text
+          	this.activeLayer = 'Bottom';			//Will set to selected contents of dropdown
+            console.log("r4:  ActiveLayer:  ", this.activeLayer); 	//this gets logged successfully
+          	this.onRefresh();				//console says this is not a function.				
+            
+          });
+          */
+        },
+        
+        setupFeedsDepths: function() {
+            // As user changes vals, just update our global props
+            var el = $('#com-chilipeppr-widget-eagle');
+            var that = this;
+            el.find('.trace-depth').change(function(evt) {
+                console.log("evt:", evt);
+                that.depthOfSignalMilling = evt.currentTarget.valueAsNumber;
+                console.log("that.depthOfSignalMilling:", that.depthOfSignalMilling);
+            });
+            el.find('.trace-fr').change(function(evt) {
+                console.log("evt:", evt);
+                that.feedRateSignals = evt.currentTarget.valueAsNumber;
+            });
+            el.find('.trace-fr-plunge').change(function(evt) {
+                console.log("evt:", evt);
+                that.feedRatePlunge = evt.currentTarget.valueAsNumber;
+            });
+            el.find('.clearance-height').change(function(evt) {
+                console.log("evt:", evt);
+                that.clearanceHeight = evt.currentTarget.valueAsNumber;
+            });
+            el.find('.drill-feedrate').change(function(evt) {
+                console.log("evt:", evt);
+                if(evt.currentTarget.valueAsNumber) // arrow buttons send 2 events
+                  that.drillFeedrate = evt.currentTarget.valueAsNumber;
+            });
+            el.find('.drill-max').change(function(evt) {
+                console.log("evt:", evt);
+                if(evt.currentTarget.valueAsNumber) // arrow buttons send 2 events
+                  that.drillMaxDiameter = evt.currentTarget.valueAsNumber;
+            });
+            el.find('.drill-depth').change(function(evt) {
+                console.log("evt:", evt);
+                if(evt.currentTarget.valueAsNumber) // arrow buttons send 2 events
+                  that.drillDepth = evt.currentTarget.valueAsNumber;
+            });
+            el.find('.dimension-mill-diameter').change(function(evt) {
+                console.log("evt:", evt);
+                /* 
+                TODO: 
+                - Test to exists holes they are smaller as this mill diameter and 
+                Compare that.drillMaxDiameter greater as this holes or alert!
+                Cuz i.e.
+                The user has 1mm and 1.5mm holes, the user settings are:
+                  * that.drillMaxDiameter = 1.1
+                  * that.millDiameter = 2
+                then it's impossible to mill 1.5mm holes with a 2mm tool.
+                Send user a message and prevent a change here
+                */
+                var choosedDiameter = evt.currentTarget.valueAsNumber;
+                for ( var diameter in that.sortObjByKey(that.drillPads) ){
+                  if(diameter > that.drillMaxDiameter && diameter < choosedDiameter){
+                     evt.currentTarget.style.color = "#ff0000";
+                     chilipeppr.publish("/com-chilipeppr-elem-flashmsg/flashmsg", 
+                           "Warning", 
+                           "The choosed mill diameter " + choosedDiameter + "mm are to small to mill holes with " 
+                              + diameter + "mm! Please check you drill max diameter!" , 
+                        3 * 1000);
+                      return;
+                  } else {
+                      evt.currentTarget.style.color = ""
+                  }
+                }
+
+                if(evt.currentTarget.valueAsNumber) // arrow buttons send 2 events
+                  that.millDiameter = evt.currentTarget.valueAsNumber;
+            });
+            el.find('.dimension-depth').keyup(function(evt) {
+                console.log("evt:", evt);
+                var item = $(evt.currentTarget);
+                that.depthOfDimensions = parseFloat(item.val());
+                console.log("depthOfDimensions:", that.depthOfDimensions);
+                if (that.depthOfDimensions > 0) {
+                    that.depthOfDimensions = that.depthOfDimensions * -1;
+                    item.val(that.depthOfDimensions);
+                }
+                that.calcPasses(el);
+            });
+            el.find('.dimension-stepdown').keyup(function(evt) {
+                console.log("evt:", evt);
+                var item = $(evt.currentTarget);
+                that.stepDownDimensions = parseFloat(item.val());
+                if (isNaN(that.stepDownDimensions)) {
+                    item.addClass("alert-danger");
+                    return;
+                }
+                item.removeClass('alert-danger');
+                if (that.stepDownDimensions > 0) {
+                    that.stepDownDimensions = that.stepDownDimensions * -1;
+                    item.val(that.stepDownDimensions);
+                }
+                if (that.stepDownDimensions < that.depthOfDimensions) {
+                    // they can't make their step down be greater than dimensions
+                    that.stepDownDimensions = that.depthOfDimensions;
+                    item.val(that.stepDownDimensions);
+                }
+                that.calcPasses(el);
+            });
+            el.find('.dimension-feedrate').change(function(evt) {
+                console.log("evt:", evt);
+                that.feedRateDimensions = evt.currentTarget.valueAsNumber;
+            });
+            el.find('.dispenser-axis').change(function(evt) {
+                console.log("evt:", evt);
+                that.dispenserAxis = evt.currentTarget.valueAsNumber;
+            });
+            el.find('.stepsfordrop').change(function(evt) {
+                console.log("evt:", evt);
+                that.stepsfordrop = evt.currentTarget.valueAsNumber;
+            });
+            el.find('.cannula-diameter').change(function(evt) {
+                console.log("evt:", evt);
+                that.cannulaDiameter = evt.currentTarget.valueAsNumber;
+            });
+        },
+        calcPasses: function(el) {
+            // calc passes
+            var passesFloat = this.depthOfDimensions / this.stepDownDimensions;
+            var passes = parseInt(passesFloat);
+            passesFloat -= passes;
+            if (passesFloat > 0) passes++;
+            el.find('.dimension-passes i').text(passes);
+            var lastPass = this.depthOfDimensions - ((passes - 1) * this.stepDownDimensions);
+            //if (lastPass == 0) lastPass = that.stepDownDimensions;
+            el.find('.dimension-lastpass i').text(lastPass.toFixed(2));
+            console.log("passes:", passes, "lastPass:", lastPass, "passesFloat:", passesFloat);
         },
         /**
          * This method is called from the main workspace telling us the user
@@ -612,7 +823,7 @@ onAddGcode : function(addGcodeCallback, gcodeParts, eagleWidget, helpDesc){
         },
         eagle: null, // contains the eagle object
         open: function (data, info) {
-            /*
+            
             // if we are passed the file data, then use that, otherwise look to 
             // see if we had one saved from before, i.e. this is a browser reload scenario
             // and we'd like to show them their recent Eagle BRD
@@ -670,26 +881,21 @@ onAddGcode : function(addGcodeCallback, gcodeParts, eagleWidget, helpDesc){
                 console.log("eagle:", this.eagle);
             } else {
                 console.log("no last file, so not opening");
-            }*/
+            }
         },
-        bigSTLGroup: null,
+        //mySTLGroup: null,
         testLoadSTL: function () {
             //var scene = new THREE.Scene();
-            
-            //var tempFile = "";
-            
-            
             var loader = new THREE.STLLoader();
             var stlScenGroup = new THREE.Group();
             //this.mySTLGroup = null;
             //loader.load( './models/stl/ascii/slotted_disk.stl', function ( geometryR ) {
             loader.load( './models/Z Axis Plate Motor Side v1.stl', function ( geometryR ) {
-            // loader.load( './models/aria.stl', function ( geometryR ) {
 
 					var materialR = new THREE.MeshPhongMaterial( { color: 0xff5533, specular: 0x111111, shininess: 200 } );
 					var mesh = new THREE.Mesh( geometryR, materialR );
 
-					mesh.position.set( 5, 5, 0 );
+					mesh.position.set( 5, 5, 0.6 );
 					//mesh.rotation.set( 0, - Math.PI / 2, 0 );
 					//mesh.scale.set( 5, 5, 5 );
 
@@ -703,64 +909,9 @@ onAddGcode : function(addGcodeCallback, gcodeParts, eagleWidget, helpDesc){
 					console.log ("ray mesh:  ", mesh);
 
 				} );
-				/*
-				loader.load( './models/3DBenchy.stl', function ( geometryR ) {
-
-					var materialR = new THREE.MeshPhongMaterial( { color: 0xff5533, specular: 0x111111, shininess: 200 } );
-					var mesh = new THREE.Mesh( geometryR, materialR );
-
-					mesh.position.set( 100, 25, 0);
-					//mesh.rotation.set( 0, - Math.PI / 2, 0 );
-					//mesh.scale.set( 5, 5, 5 );
-
-					mesh.castShadow = false;
-					mesh.receiveShadow = false;
-
-					//scene.add( mesh );
-					//this.sceneAdd (mesh);
-					//this.mySTLGroup.add (mesh);
-					stlScenGroup.add (mesh);
-					console.log ("ray mesh:  ", mesh);
-
-				} );*/
-				
 				console.log ("stlScenGroup:  ", JSON.stringify(stlScenGroup, null, 2) );
             this.sceneAdd (stlScenGroup);
         },
-        loadStlModel: function (modelData) {
-            var loader = new THREE.STLLoader();
-            var stlScenGroup = new THREE.Group();
-            loader.load( modelData, function ( geometryR ) {
-
-					var materialR = new THREE.MeshPhongMaterial( { color: 0xff5533, specular: 0x111111, shininess: 200 } );
-					var mesh = new THREE.Mesh( geometryR, materialR );
-
-					mesh.position.set( 100, 25, 0);
-					//mesh.rotation.set( 0, - Math.PI / 2, 0 );
-					//mesh.scale.set( 5, 5, 5 );
-
-					mesh.castShadow = false;
-					mesh.receiveShadow = false;
-
-					//scene.add( mesh );
-					//this.sceneAdd (mesh);
-					//this.mySTLGroup.add (mesh);
-					stlScenGroup.add (mesh);
-					//console.log ("ray mesh:  ", mesh);
-
-				} );
-				this.sceneAdd (stlScenGroup);
-        },/*
-        drawAllStlModels: function () {
-            if (this.bigSTLGroup == null)
-            {
-                this.bigSTLGroup = new THREE.Group();
-            }
-            //this.bigSTLGroup.add ()
-            //Placeholder for lots of model arrangement and other rendering things.  
-            this.sceneAdd (bigSTLGroup);
-        },*/
-        
         /**
          * We need the 3D viewer to be ready to go for us to generate our 3D view,
          * so do a little bit of a wait sequence here where we try 3 times to
@@ -834,7 +985,8 @@ onAddGcode : function(addGcodeCallback, gcodeParts, eagleWidget, helpDesc){
             // all of our draw3dxxx functions which means all our three.js objects
             // and clipper objects are generated.
             chilipeppr.publish("/" + this.id + '/beforeLayerGenerate', this);
-            
+
+            this.populateLayerToggleDropdown();
             console.log("iterating Eagle Brd and drawing into 3d viewer");
             console.log("eagle obj we will draw:", this.eagle);
             this.clear3dViewer();
@@ -853,8 +1005,7 @@ onAddGcode : function(addGcodeCallback, gcodeParts, eagleWidget, helpDesc){
             this.draw3dVias('1-16');
             this.threeDimensions = this.draw3dDimension(this.endmillSize);
             */
-            //this.testLoadSTL();
-            //this.drawAllStlModels();
+            this.testLoadSTL();
             //this.obj3d.children = [];
             
             // obj3d is the original THREE.Object3D() for the 3d
@@ -1236,7 +1387,7 @@ onAddGcode : function(addGcodeCallback, gcodeParts, eagleWidget, helpDesc){
         // Actual parsing of Eagle object and rendering of Three.js objects
         // and the Clipper paths.
         
-        /*setupAdvancedInflateByUI: function() {
+        setupAdvancedInflateByUI: function() {
             var smdEl = $('#com-chilipeppr-widget-eagle .inflate-smds-by');
             var padEl = $('#com-chilipeppr-widget-eagle .inflate-pads-by');
             var viaEl = $('#com-chilipeppr-widget-eagle .inflate-vias-by');
@@ -1279,9 +1430,9 @@ onAddGcode : function(addGcodeCallback, gcodeParts, eagleWidget, helpDesc){
                     that.onRefresh(evt);
                 }
             });
-        },*/
+        },
         onRefresh: function(event, callback) {
-            /*
+            
             console.log("onRefresh. event:", event);
             
             if (event) {
@@ -1304,11 +1455,953 @@ onAddGcode : function(addGcodeCallback, gcodeParts, eagleWidget, helpDesc){
             
             chilipeppr.publish("/com-chilipeppr-elem-flashmsg/flashmsg", "Rendering Eagle BRD", "Rendering signals, vias, pads, SMD's, polygons, and thermals. " + extraTxt, 3 * 1000);
             // remove old mill path and inflated path
-            setTimeout(this.onRefresh2nd.bind(this, event, callback), 200);*/
+            setTimeout(this.onRefresh2nd.bind(this, event, callback), 200);
         },
         threePathEndMill: [],
         onRefresh2nd: function(event, callback) {
             
+            this.inflateMillPathBy = parseFloat($('#com-chilipeppr-widget-eagle .inflate-by').val());
+            var isMagicWand = $('#com-chilipeppr-widget-eagle .magic-wand-active').is(':checked');
+            var isShow = $('#com-chilipeppr-widget-eagle .show-actual').is(':checked');
+            var isSolid = $('#com-chilipeppr-widget-eagle .show-actual-asmesh').is(':checked');
+            
+            this.threePathEndMill.forEach(function(p) {
+                this.sceneRemove(p);
+            }, this);
+            this.threePathEndMillArr.forEach(function(p) {
+                this.sceneRemove(p);
+            }, this);
+            this.threePathEndMill = [];
+            this.threePathEndMillArr = [];
+            
+            this.clear3dViewer();
+            this.sceneReAddMySceneGroup();
+            
+            // COMPLICATED
+            // 1. We need to create a path for the wires, smds, pads, and vias
+            // for each signal
+            // 2. Then we figure out polygons and remove from the polys the path
+            // from step 1. We should actually remave the inflated paths of the
+            // step 1 poly. That will leave us with a clipped poly
+            // 3. Then we remove smds and pads from the poly.
+            
+            
+            
+            // let's let user use different inflate values for different types of segments
+            var inflateBy = this.inflateMillPathBy;
+            var inflateWiresBy = inflateBy; //0.35;
+            var inflateSmdsBy = inflateBy; //0.25;
+            var inflatePadsBy = inflateBy; //0.3;
+            var inflateViasBy = inflateBy; //0.4;
+            var inflatePolysBy = 0;
+            
+            // See if user overrode these (which is only allowed without magic wand)
+            if ($('#com-chilipeppr-widget-eagle .use-inflate-smds-by').is(':checked')) {
+                var val = parseFloat($('#com-chilipeppr-widget-eagle .inflate-smds-by').val());
+                if (isNaN(val)) {
+                    $('#com-chilipeppr-widget-eagle .inflate-smds-by').addClass("alert-danger");
+                } else {
+                    $('#com-chilipeppr-widget-eagle .inflate-smds-by').removeClass("alert-danger");
+                    inflateSmdsBy = val;
+                }
+            }
+            if ($('#com-chilipeppr-widget-eagle .use-inflate-pads-by').is(':checked')) {
+                var val = parseFloat($('#com-chilipeppr-widget-eagle .inflate-pads-by').val());
+                if (isNaN(val)) {
+                    $('#com-chilipeppr-widget-eagle .inflate-pads-by').addClass("alert-danger");
+                } else {
+                    $('#com-chilipeppr-widget-eagle .inflate-pads-by').removeClass("alert-danger");
+                    inflatePadsBy = val;
+                }
+            }
+            if ($('#com-chilipeppr-widget-eagle .use-inflate-vias-by').is(':checked')) {
+                var val = parseFloat($('#com-chilipeppr-widget-eagle .inflate-vias-by').val());
+                if (isNaN(val)) {
+                    $('#com-chilipeppr-widget-eagle .inflate-vias-by').addClass("alert-danger");
+                } else {
+                    $('#com-chilipeppr-widget-eagle .inflate-vias-by').removeClass("alert-danger");
+                    inflateViasBy = val;
+                }
+            }
+            
+            // let's use the new clipperBySignalKey object
+            var paths = [];
+            console.log("this.clipperBySignalKey:", this.clipperBySignalKey);
+            var keys = Object.keys(this.clipperBySignalKey);
+            var debugZ = 0.5;
+            
+            // Step 0.8. If user wants to remove undefined SMDs from the path rendering
+            // i.e. we'll just not mill them out
+            
+            if ($('#com-chilipeppr-widget-eagle .use-smd-ignoreundefined').is(':checked')) {
+
+                console.log("removing undefined signal smds");                
+                for (var i = 0; i < keys.length; i++) {
+                    var key = keys[i];
+                    var signal = this.clipperBySignalKey[key];
+                    console.log("step 0.9 key:", key, "signal:", signal);
+                    
+                    if (key === undefined || key == "undefined") {
+                        console.log("found undefined key");
+                    } else {
+                        continue;
+                    }
+                    
+                    // add smds (pads without holes)
+                    if (signal.smds && signal.smds.length > 0) {
+                        
+                        // make backup copy in case user wants to add them back in
+                        if (!('smdsBackup' in signal)) {
+                            signal.smdsBackup = signal.smds;
+                        }
+                        
+                        delete signal.smds;
+                        console.log("just deleted smds from signal:", signal);
+                        
+                        //signal.smds.forEach(function(smd) {    
+                        //}, this);
+                    }
+                }
+            } else {
+                // put back backup copy if it exists because we modify the original
+                // wire clipper paths if user chose to "clip wires", but we cheat by keeping
+                // a backup copy in case they uncheck the box later
+                for (var i = 0; i < keys.length; i++) {
+                    var key = keys[i];
+                    if (key !== undefined) continue;
+                    var signal = this.clipperBySignalKey[key];
+                    if (signal.smds && 'smdsBackup' in signal)
+                        signal.smds = signal.smdsBackup;
+                }
+            }
+            
+            // Step 0.9. If user wants to clip wires out of SMDs do it at this step
+            if ($('#com-chilipeppr-widget-eagle .use-smd-clipwire').is(':checked')) {
+                
+                for (var i = 0; i < keys.length; i++) {
+                    var key = keys[i];
+                    var signal = this.clipperBySignalKey[key];
+                    console.log("step 0.9 key:", key, "signal:", signal);
+                    
+                    // make backup copy of original signal.wire.clipper
+                    if (!(signal.wire && signal.wire.clipper)) {
+                        continue;
+                    }
+                    
+                    if (!('clipperBackup' in signal.wire))
+                        signal.wire.clipperBackup = signal.wire.clipper;
+                    
+                    // add smds (pads without holes)
+                    if (signal.smds && signal.smds.length > 0) {
+                        
+                        signal.smds.forEach(function(smd) {    
+                            
+                            // we have each smd looping here, so just diff out this smd
+                            // from each wire in this signal
+                            if (signal.wire && signal.wire.clipper.length > 0) {
+                                //signal.wire.clipper.forEach(function(path) {   
+                                    console.log("removing smd path from wire path. smd:", smd, "wire path:", signal.wire);
+                                
+                                    signal.wire.clipper = this.getDiffOfClipperPaths(signal.wire.clipper, [smd.clipper]);
+                                //}, this);
+                            }
+                            
+                        }, this);
+                    }
+                }
+            } else {
+                // put back backup copy if it exists because we modify the original
+                // wire clipper paths if user chose to "clip wires", but we cheat by keeping
+                // a backup copy in case they uncheck the box later
+                for (var i = 0; i < keys.length; i++) {
+                    var key = keys[i];
+                    var signal = this.clipperBySignalKey[key];
+                    if (signal.wire && 'clipperBackup' in signal.wire)
+                        signal.wire.clipper = signal.wire.clipperBackup;
+                }
+            }
+
+            
+            // Step 1. Create a path for each signal that includes wires, pads,
+            // smds, and vias
+            console.log("doing step 1 of rendering");
+            for (var i = 0; i < keys.length; i++) {
+                var key = keys[i];
+                var signal = this.clipperBySignalKey[key];
+                console.log("step 1 key:", key, "signal:", signal);
+            
+                var signalPaths = [];
+                var signalPathsInflated = [];
+                var signalPathsInflatedHalf = [];
+                
+                // add smds (pads without holes)
+                if (signal.smds && signal.smds.length > 0) {
+                    
+                    signal.smds.forEach(function(smd) {    
+                        signalPaths.push(smd.clipper);
+                        
+                        // decide whether to inflate smds or not based on user settings
+                        var ip, ipHalf, ipConstraint;
+                        if (true) {
+                            ip = this.getInflatePath([smd.clipper], inflateSmdsBy);
+                            //ipHalf = this.getInflatePath([smd.clipper], inflateSmdsBy / 2);
+                        }  else {
+                            ip = [smd.clipper];
+                        }
+                        ip.forEach(function(ipath) {
+                            signalPathsInflated.push(ipath);
+                        });
+                        /*ipHalf.forEach(function(ipath) {
+                            signalPathsInflatedHalf.push(ipath);
+                        });*/
+                        /*
+                        if (key == "+5V") {
+                            console.log("+3V smd:", smd);
+                            this.drawClipperPaths([smd.clipper], 0xff0000, 0.99, debugZ);
+                            //debugZ += 0.5;
+                        }*/
+                    }, this);
+                }
+
+                // add pads (have holes)
+                if (signal.pads && signal.pads.length > 0) {
+                    signal.pads.forEach(function(pad) {    
+                        signalPaths.push(pad.clipper);
+                        
+                        // decide whether to inflate pads based on user settings
+                        var ip, ipHalf;
+                        if (true) {
+                            ip = this.getInflatePath([pad.clipper], inflatePadsBy);
+                            //ipHalf = this.getInflatePath([pad.clipper], inflatePadsBy / 2);
+                        }  else {
+                            ip = [smd.clipper];
+                        }
+                        ip.forEach(function(ipath) {
+                            signalPathsInflated.push(ipath);
+                        });
+                        /*ipHalf.forEach(function(ipath) {
+                            signalPathsInflatedHalf.push(ipath);
+                        });*/
+                    }, this);
+                }
+                
+                // add vias
+                if (signal.vias && signal.vias.length > 0) {
+                    signal.vias.forEach(function(via) {    
+                        signalPaths.push(via.clipper);
+                        
+                        // decide whether to inflate vias based on user settings
+                        var ip, ipHalf;
+                        if (true) {
+                            ip = this.getInflatePath([via.clipper], inflateViasBy);
+                            //ipHalf = this.getInflatePath([via.clipper], inflateViasBy / 2);
+                        }  else {
+                            ip = [smd.clipper];
+                        }
+                        ip.forEach(function(ipath) {
+                            signalPathsInflated.push(ipath);
+                        });
+                        /*ipHalf.forEach(function(ipath) {
+                            signalPathsInflatedHalf.push(ipath);
+                        });*/
+                    }, this);
+                }
+
+                // add wires
+                if (signal.wire && signal.wire.clipper.length > 0) {
+                    signal.wire.clipper.forEach(function(path) {    
+                        signalPaths.push(path);
+                        
+                        // decide whether to inflate wires based on user settings
+                        var ip, ipHalf;
+                        if (true) {
+                            // check orientation and if it's a hole deflate instead of inflate
+                            if (ClipperLib.Clipper.Orientation(path)) {
+                                // normal outer path
+                                ip = this.getInflatePath([path], inflateWiresBy);
+                                //ipHalf = this.getInflatePath([path], inflateWiresBy / 2);
+                            } else {
+                                // hole path
+                                //console.warn("found hole path in signal wire. signal.wire:", signal.wire);
+                                ip = this.getInflatePath([path], inflateWiresBy * -1);
+                                //if (ClipperLib.Clipper.Orientation(ip)) {
+                                    //console.warn("this deflated hole does not look like a hole anymore. huh?. ip:", ip);
+                                    ClipperLib.Clipper.ReversePaths(ip);
+                                //}
+                                //ipHalf = this.getInflatePath([path], inflateWiresBy / 2 * -1);
+                                //ipHalf.reverse();
+                            }
+                        }  else {
+                            ip = [smd.clipper];
+                        }
+                        ip.forEach(function(ipath) {
+                            signalPathsInflated.push(ipath);
+                        });
+                        /*ipHalf.forEach(function(ipath) {
+                            signalPathsInflatedHalf.push(ipath);
+                        });*/
+                    }, this);
+                }
+                
+                // add this signal path to overall paths
+                var signalPathUnion = this.getUnionOfClipperPaths(signalPaths);
+                signal.path = signalPathUnion;
+                //if (key == "VSS") this.drawClipperPaths(signal.path, 0xff0000, 0.99, debugZ);
+               
+                // For pathInflated...
+                console.log("signalPathsInflated:", signalPathsInflated);
+                signal.pathInflated = this.getUnionOfClipperPaths(signalPathsInflated);
+                //if (key == "VSS") this.drawClipperPaths(signal.pathInflated, 0xff0000, 0.99, 2);
+                
+                // TODO: If we start using this inflated half again
+                //signal.pathInflatedHalf = this.getUnionOfClipperPaths(signalPathsInflatedHalf);
+                
+                //debugZ += 1;
+                
+            }
+            console.log("new clipperBySignalKey with overallPath:", this.clipperBySignalKey);
+            
+            
+            // Step 1.5. Clip each fully inflated signal by the half inflated signal so
+            // that we can try to get no overlap and instead end up with half an overlap.
+            /*
+            for (var i = 0; i < keys.length; i++) {
+                var key = keys[i];
+                var signal = this.clipperBySignalKey[key];
+                
+                for (var i2 = 0; i2 < keys.length; i2++) {
+                    if (i == i2) continue; // skip ourselves
+                    var key2 = keys[i2];
+                    var signal2 = this.clipperBySignalKey[key2];
+                    
+                    signal.pathInflated = this.getDiffOfClipperPaths(signal.pathInflated, signal2.pathInflatedHalf);
+                }
+            }
+            */
+            
+            // Only do this step if user asked for Magic Wand
+            // Step 1.5: Inflate paths with half constraint
+            // now do magic wand
+            if (isMagicWand) {
+                for (var i = 0; i < keys.length; i++) {
+                    var key = keys[i];
+                    var signal = this.clipperBySignalKey[key];
+                    console.log("step 1.5 key:", key, "signal:", signal);
+                    
+                    var signalPathsInflateConstraint = [];
+                    
+                    // create constraint paths, which is all the other paths minus
+                    // this one
+                    var constraintPaths = [];
+                    for (var i2 = 0; i2 < keys.length; i2++) {
+                        if (i == i2) continue;
+                        var key = keys[i2];
+                        var signal2 = this.clipperBySignalKey[key];
+                        signal2.path.forEach(function(path) {
+                            constraintPaths.push(path);
+                        });
+                    }
+                    
+                    // get inflated constraint path for this signal
+                    if (i == 0) {
+                        console.log("doing inflate with constraint for i:", i);
+                        // create constraint
+                        var ipc = this.getInflatePathWithConstraint(signal.path, inflateBy, constraintPaths);
+                        ipc.forEach(function(ipath) {
+                            signalPathsInflateConstraint.push(ipath);
+                        });
+                        
+                        
+                        // add this inflatedConstrained signal path to overall paths
+                        var signalPathUnion = this.getUnionOfClipperPaths(signalPathsInflateConstraint);
+                        signal.pathInflatedConstrained = signalPathUnion;
+                        signal.pathInflated = signalPathUnion;
+                    }
+                    
+                }
+            }
+            
+            
+            // Step 2. If a signal has a poly, remove from the polys the other paths
+            // from step 1. We should actually remove the inflated paths of the
+            // step 1 poly. That will leave us with a clipped poly
+            for (var i = 0; i < keys.length; i++) {
+                var key = keys[i];
+                var signal = this.clipperBySignalKey[key];
+                //console.log("signal:", signal);
+                
+                var signalPaths = [];
+                
+                // deal with clipping polygons in this signal by clipping
+                // them with any of the signals from other layers
+                if (signal.poly && signal.poly.polys.length > 0) {
+                    
+                    var polyCtr = 0;
+                    signal.poly.polys.forEach(function(poly) {
+                        
+                        console.log("poly:", poly, "signal:", signal);
+
+                        // create our start of new path
+                        poly.clipperWithOtherSignalsRemoved = ClipperLib.JS.Clone([poly.clipper]);
+
+                        if (poly.pour == "cutout") {
+                            //console.error("need to create cutout algo. poly:", poly);
+                            // skip the cutout cuz nothing to render, instead this poly
+                            // will get used to remove from real polys in other times thru
+                            // this loop
+                            //console.warn("found a cutout poly. still need to remove other signals");
+                            //return;
+                        }
+                            
+                        // clip the poly by removing all paths from other signals
+                        // loop thru all other inflated signal paths
+                        for (var i2 = 0; i2 < keys.length; i2++) {
+                            if (i == i2) continue; // skip ourselves
+                            var key2 = keys[i2];
+                            var signal2 = this.clipperBySignalKey[key2];
+                            poly.clipperWithOtherSignalsRemoved = this.getDiffOfClipperPaths(poly.clipperWithOtherSignalsRemoved, signal2.pathInflated);
+                            
+                            // cutout other polys in the entire document from this poly
+                            // as well but only if their rank is less than this poly's rank
+                            if (signal2.poly && signal2.poly.polys.length > 0) {
+                                var poly1Rank = 1;
+                                if (poly.rank > 1) poly1Rank = poly.rank;
+                                signal2.poly.polys.forEach(function(poly2) {
+                                    var poly2Rank = 1;
+                                    if (poly2.rank > 1) poly2Rank = poly2.rank;
+                                    if (poly2Rank < poly1Rank) {
+                                        // that means poly2 is a stronger rank than me
+                                        // so we need to cut it out of me
+                                        console.log("found poly that is stronger rank, so cut it out");
+                                        poly.clipperWithOtherSignalsRemoved = this.getDiffOfClipperPaths(poly.clipperWithOtherSignalsRemoved, [poly2.clipper]);
+                                    }
+                                }, this);
+                                
+                                // also handle cutout polys, where ranks aren't relevant
+                                signal.poly.polys.forEach(function(poly2) {
+                                    if (poly2.pour == "cutout") {
+                                        console.log("found poly that should cutout from other polys. poly2:", poly2);
+                                        poly.clipperWithOtherSignalsRemoved = this.getDiffOfClipperPaths(poly.clipperWithOtherSignalsRemoved, [poly2.clipper]);                     
+                                    }
+                                }, this);
+                            }
+                        }
+                        
+                        // additionally, this signal may have multiple polys and they
+                        // may be setup for cutout of this one, so scan thru those
+                        // and clip this poly if the other poly is asking us to
+                        console.log("about to trim any polys in this signal with other polys in this signal that are cutouts");
+                        if (poly.pour != "cutout") {
+                            var polyCtr2 = 0;
+                            signal.poly.polys.forEach(function(poly2) {
+                                if (polyCtr == polyCtr2) return; // we don't want to analyze ourselves
+                                console.log("poly2:", poly2, "signal:", signal);
+                                if (poly2.pour == "cutout") {
+                                    console.log("found poly that should cutout from other polys. poly2:", poly2);
+                                    poly.clipperWithOtherSignalsRemoved = this.getDiffOfClipperPaths(poly.clipperWithOtherSignalsRemoved, [poly2.clipper]);                     
+                                }
+                                polyCtr2++;
+                                
+                            }, this);
+                        }
+                         
+                        //this.drawClipperPaths(poly.clipperWithOtherSignalsRemoved, 0xff0000, 0.99, debugZ);
+                        //debugZ += 5;
+                        
+                        polyCtr++;
+                        
+                    }, this);
+                }
+            }
+
+            // Step 2.5: Also clip polys by the dimenions, meaning, don't let any poly
+            // go beyond the dimensions of the board.
+            for (var i = 0; i < keys.length; i++) {
+                var key = keys[i];
+                var signal = this.clipperBySignalKey[key];
+                
+                if (signal.poly && signal.poly.polys.length > 0) {
+                    
+                    signal.poly.polys.forEach(function(poly) {
+                        
+                        console.log("doing dimension clip. poly:", poly, "signal:", signal);
+                        var regionOutside = this.getDiffOfClipperPaths(poly.clipperWithOtherSignalsRemoved, [this.clipperDimension]);
+                        if (regionOutside != null && regionOutside.length > 0) {
+                            // we found a region outside dimensions, clip it off
+                            poly.clipperWithOtherSignalsRemoved = this.getDiffOfClipperPaths(poly.clipperWithOtherSignalsRemoved, regionOutside);
+                        }
+                        //this.drawClipperPaths(poly.clipperWithOtherSignalsRemoved, 0xff0000, 0.99, debugZ);
+                        //debugZ += 5;
+                    }, this);
+                }
+            }
+            
+            // Step 3. Now deal with removing smds/pads from the polys
+            console.log("doing step 3");
+            for (var i = 0; i < keys.length; i++) {
+                var key = keys[i];
+                var signal = this.clipperBySignalKey[key];
+                //console.log("signal:", signal);
+                
+                var signalPaths = [];
+                
+                // deal with clipping polygons in this signal by clipping
+                // them with any of the signals from other layers
+                if (signal.poly && signal.poly.polys.length > 0) {
+                    
+                    signal.poly.polys.forEach(function(poly) {
+                        
+                        console.log("poly:", poly, "signal:", signal);
+                        //this.drawClipperPaths(poly.clipperWithOtherSignalsRemoved, 0xff0000, 0.9, debugZ);
+                        //debugZ += 1;
+                        
+                        if (poly.pour == "cutout") {
+                            //console.error("need to create cutout algo. poly:", poly);
+                            poly.finalClipper = poly.clipperWithOtherSignalsRemoved
+                        }
+                        
+                        
+                        // handle thermals
+                        if (poly.thermals == "no") {
+                            //signalPaths.push(poly.clipper);
+                            //poly.finalClipper = [poly.clipper];
+                            poly.finalClipper = poly.clipperWithOtherSignalsRemoved
+                        
+                        } else {
+                            // they want thermals
+                            //console.warn("need to calculate thermals");
+                            // do thermals on pads and smds only, not on wires or vias
+                            // remove pads/smds from poly to create holes in the poly
+                            // then inflate the hole by inflateMillPathBy?
+                            // then add stroked lines as cross hairs across hole
+                            // then re-add pad/smd?
+                            
+                            // create a path with holes, we may not get any
+                            // based on the if statements below
+                            var polyPathWithHoles = poly.clipperWithOtherSignalsRemoved;
+                            //this.drawClipperPaths(polyPathWithHoles, 0x00ff00, 0.9, debugZ);
+                            //debugZ += 0.1;
+                            
+                            // remove the thermal shapes of smds from poly
+                            if (signal.smds && signal.smds.length > 0) {
+                                
+                                // let's do alternate approach. sometimes smds can
+                                // overlap. it's not common, but on LED's for instance, multiple
+                                // smds are near each other to create a more unique shape for
+                                // the smd. so we need to union these and then do the thermal
+                                // for each polygon region, rather than relying on the smd's
+                                // themselves to indicate separation and independent thermals
+                                
+                                var newSmdPaths = [];
+                                signal.smds.forEach(function(smd) {   
+                                    newSmdPaths.push(ClipperLib.JS.Clone(smd.clipper));
+                                }, this);
+                                
+                                var newSmdPathsUnion = this.getUnionOfClipperPaths(newSmdPaths);
+                                newSmdPathsUnion.forEach(function(path) {
+                                    var cutoutPath = this.createThermalCutoutsFromSmd({clipper: path}, poly, inflateSmdsBy); 
+                                    // deflate the cutoutPath to ensure we don't run over the smd
+                                    //cutoutPath = this.getInflatePath(cutoutPath, (inflateBy / 4) * -1);
+                                    
+                                    // remove the cutoutPath from poly
+                                    polyPathWithHoles = this.getDiffOfClipperPaths(polyPathWithHoles, cutoutPath);
+                                }, this);
+                                
+                            } 
+                            
+                            // remove the thermals shapes of pads from poly
+                            if (signal.pads && signal.pads.length > 0) {
+                                
+                                signal.pads.forEach(function(pad) {   
+                                    
+                                    console.log("removing thermal cutouts from poly. pad:", pad, "poly:", poly);
+                                    
+                                    var cutoutPath = this.createThermalCutoutsFromSmd(pad, poly, inflatePadsBy); 
+                                    
+                                    // deflate the cutoutPath to ensure we don't run over the smd
+                                    //cutoutPath = this.getInflatePath(cutoutPath, inflateBy * -1);
+                           
+                                    // remove the cutoutPath from poly
+                                    polyPathWithHoles = this.getDiffOfClipperPaths(polyPathWithHoles, cutoutPath);
+                                         
+                                }, this);
+                            } 
+                            
+                            poly.finalClipper = polyPathWithHoles;
+                            
+                        }
+                        
+                        // debug. draw the final poly
+                        //this.drawClipperPaths(poly.finalClipper, 0xff0000, 0.99, debugZ);
+                        //debugZ += 2;
+                        
+                    }, this);
+                }
+            }
+
+            // Dispenser Code to render drops
+            // TODO. Need to fire off pubsub so others, like Frank, can inject
+            // here. Or, better yet let's get a more generic way of letting 3rd
+            // party add-ons add stuff
+            
+                        // Step 4. We now have a gorgeous clipperBySignalKey with polys that are
+            // correct with all stuff removed. We have wires, pads, smds, vias.
+            // We now need to union each signal to one final master union path.
+            // Then we'll render those paths.
+            console.log("doing step 4, final combining of each signal path");
+            for (var i = 0; i < keys.length; i++) {
+                var key = keys[i];
+                var signal = this.clipperBySignalKey[key];
+                console.log("key:", key, "signal:", signal);
+                
+                //signal.finalPath = ClipperLib.JS.Clone();
+                
+                // take main path and add poly
+                if (signal.poly && signal.poly.polys.length > 0) {
+                    signal.poly.polys.forEach(function(poly) {
+                        console.log("adding final poly. signal.pathInflated:", signal.pathInflated, "poly.finalClipper:", poly.finalClipper);
+                        
+                        // don't add cutout polys, ignore them, they're just for clipping
+                        // purposes
+                        if (poly.pour == "cutout") {
+                            return;
+                        }
+
+                        // wipe out the poly region from the signal.pathInflated, meaning
+                        // drop all the original smds/pads/vias/wires inside that poly because
+                        // we have our modified poly ready to put there and don't want 
+                        // anything interfering with it
+                        
+                        // however, to avoid problems, deflate the poly a tiny bit to do this
+                        // so that when we do the final union we are guaranteed overlap
+                        
+                        // we could possibly have a poly without signals
+                        if (signal.pathInflated && signal.pathInflated.length > 0) {
+                            var barelyDeflatedPoly = this.getInflatePath([poly.clipper], -0.00010);
+                            signal.pathInflated = this.getDiffOfClipperPaths(signal.pathInflated, barelyDeflatedPoly);
+                            poly.finalClipper.forEach(function(path) {
+                                signal.pathInflated.push(path);
+                            });
+                        } else {
+                            // just use the poly as final path
+                            signal.pathInflated = poly.finalClipper;
+                        }
+                    }, this);
+                    // now union the main path to the poly(s)
+                    signal.pathInflated = this.getUnionOfClipperPaths(signal.pathInflated);
+                }
+                
+                signal.pathInflated.forEach(function(path) {
+                    paths.push(path);
+                });
+                //var threePath = this.drawClipperPaths(signal.pathInflated, 0xff0000, 0.3, 3);
+                //this.threePathEndMillArr.push(threePath);
+            }
+            
+            // Step 5.
+            // Now we should have a full signal path for each signal where we
+            // have wires,smds,pads, and vias as well as the polygons where the
+            // polygon is cutout cleanly to represent what you would see in Eagle
+            
+            // Let's do an additional step and remove redundant lines so that we don't end
+            // up with our endmill traversing the same path twice
+            
+            // We want full cycles around each signal to avoid inaccuracy in the milling,
+            // so we likely want to overreach the path by one line segment (or even measure
+            // at least 2mm into the beginning of each path, or 10x the endmill size)
+            // Find the signal with the most amount of paths/points and end with that
+            // because we may have a signal layer with a ground pour, or +V pour and that
+            // will contain the majority of moves on it's own. But, start with shortest single
+            // path and look to other signals to see if there are redundant lines and
+            // remove them
+            
+            // Sort shortest path first
+            /*
+            paths.sort(function (a, b) {
+                if (a.length > b.length) {
+                    return 1;
+                }
+                if (a.length < b.length) {
+                    return -1;
+                }
+                // a must be equal to b
+                return 0;
+            });
+            */
+
+            // make a fake duplicate
+            //paths.push(ClipperLib.JS.Clone(paths[0]));
+
+            // Sort longest path first
+            paths.sort(function (a, b) {
+                if (a.length > b.length) {
+                    return -1;
+                }
+                if (a.length < b.length) {
+                    return 1;
+                }
+                // a must be equal to b
+                return 0;
+            });
+            
+            // REDUNDANT PATH REDUCTION
+            // Should really get this working to cut mill time in half
+            if (false) {
+            // make all paths be outer orientation
+            for (var i = 0; i < paths.length; i++) {
+                var path = paths[i];
+                var orientation = ClipperLib.Clipper.Orientation(path);
+                if (orientation == false) {
+                    // it's a hole, reverse it
+                    console.log("found hole. reversing it.");
+                    path = path.reverse();
+                }
+            }
+
+            console.log("doing redundant line ctr");
+            var redundantLineCtr = 0;
+            for (var path1Ctr = 0; path1Ctr < paths.length; path1Ctr++) {
+                var path1 = paths[path1Ctr];
+                for (var i = 0; i < path1.length; i++) {
+                    var pt1 = path1[i];
+                    var pt2 = (i+1 < path1.length) ? path1[i+1] : path1[0];
+                    for (var path2Ctr = 0; path2Ctr < paths.length; path2Ctr++) {
+                        if (path2Ctr == path1Ctr) continue; // skip myself
+                        var path2 = paths[path2Ctr];
+                        for (var i2 = 0; i2 < path2.length; i2++) {
+                            var pt2pt1 = path2[i2];
+                            var pt2pt2 = (i2+1 < path2.length) ? path2[i2+1] : path2[0];
+                            if (pt1 != null && pt2 != null && pt2pt1 != null && pt2pt2 != null && pt1.X == pt2pt1.X && pt1.Y == pt2pt1.Y && pt2.X == pt2pt2.X && pt2.Y == pt2pt2.Y) {
+                                //console.log("found redundant path. path1Ctr:", path1Ctr, "path2Ctr:", path2Ctr);    
+                                // try setting to null
+                                pt1 = null;
+                                path1[i] = null;
+                                pt2.markedForDelete = true;
+                                redundantLineCtr++;
+                            }
+                        }
+                    }
+                }
+            }
+            console.log("num of redundantLineCtr:", redundantLineCtr);
+            
+            // now loop thru and remove points that are nulls
+            var removedPtsCtr = 0;
+            var removedFromMarked = 0;
+            var newPaths = [];
+            for (var path1Ctr = 0; path1Ctr < paths.length; path1Ctr++) {
+                var path1 = paths[path1Ctr];
+                var newPath1 = [];
+                for (var i = 0; i < path1.length; i++) {
+                    var pt = path1[i];
+                    if (pt == null)
+                        removedPtsCtr++;
+                    else if (pt.markedForDelete)
+                        removedFromMarked++;
+                    else
+                        newPath1.push(pt);
+                }
+                if (newPath1.length > 0)
+                    newPaths.push(newPath1);
+            }
+            paths = newPaths;
+            console.log("removed all null pts. removedPtsCtr:", removedPtsCtr, "removedFromMarked:", removedFromMarked);
+            } // end redundant path removal
+            
+            // remove redundant paths
+            this.debugZ = 2;
+            //paths = this.redundantPathRemoval(paths);
+            
+            // Now draw the paths
+            var zLevel = 0;
+            paths.forEach(function(path) {
+                var threePath = this.drawClipperPaths([path], 0x0000ff, 0.4, zLevel, 0, true);
+                //zLevel += 5;
+                //zLevel += 0.1;
+                this.threePathEndMill.push(threePath);
+            }, this);
+            
+            // See if user wants to show actual endmill path as a cyan mesh
+            zLevel = 5;
+            if (isShow) {
+                this.actualEndmill = parseFloat($('#com-chilipeppr-widget-eagle .actual-endmill-size').val());
+                var localInflateBy = this.actualEndmill / 2;
+                var trueInflateBy = this.actualEndmill;
+                
+                //var pathDeflatedActualArr = [];
+                //var pathInflatedActualArr = [];
+                
+                // loop thru all paths and draw a mesh stroke
+                // around the path with opacity set, such that when
+                // multiples meshes are overlaid, their colors are darker
+                // to visualize the toolpath. that means creating normals
+                // for each pt and generating triangles to create mesh
+                
+                var group = new THREE.Object3D();
+                var pathCtr = 0;
+                
+                var mat = new THREE.MeshBasicMaterial({
+                    color: 0x00ffff,
+                    transparent: true,
+                    opacity: 0.99,
+                    side: THREE.DoubleSide,
+                    depthWrite: false
+                });
+                var mat2 = new THREE.MeshBasicMaterial({
+                    color: 0x00ffff,
+                    transparent: true,
+                    opacity: 0.99,
+                    depthWrite: false
+                });
+                
+                paths.forEach(function(path) {
+                    //if (pathCtr > 0) return;
+                    //path = [{X:10, Y:10}, {X:20, Y:10}, {X:20, Y:20}];
+                    //var geometry = new THREE.Geometry();
+                    
+                    
+                    // create a clipper stroke path for each line segment
+                    // we won't create one for the last pt because there's no line
+                    // after it
+                    var clipperStrokes = [];
+                    var csThisPath = [];
+                    //console.log("calculating stroke paths for each path");
+                    for (var pi = 0; pi < path.length; pi++) {
+                        
+                        var pt = path[pi];
+                        //var pt2 = (pi + 1 < path.length) ? path[pi + 1] : null;
+                        var pt2 = (pi + 1 < path.length) ? path[pi + 1] : path[0];
+
+                        if (pt2 != null) {
+                            var clipperStroke = this.addStrokeCapsToLine(pt.X, pt.Y, pt2.X, pt2.Y, localInflateBy * 2);
+                            //clipperStrokes.push(clipperStroke);
+                            if (clipperStroke.length > 1) console.warn("got more than 1 path on clipperStroke");
+                            csThisPath.push(clipperStroke[0]);
+                            //this.drawClipperPaths(clipperStroke, 0xff0000, 0.99, 0);
+                        }
+                        
+                    }
+                    var csUnion = this.getUnionOfClipperPaths(csThisPath);
+                    //console.log("drawing csUnion:", csUnion);
+                    
+                    if (!isSolid) {
+                        var threeObj = this.drawClipperPaths(csUnion, 0x00ffff, 0.5, 0);
+                        //this.sceneAdd(group);
+                        this.threePathEndMillArr.push(threeObj);
+                    }
+                    
+                    // This is SUPER SLOW cuz of the triangle calculation
+                    if (isSolid) {
+                        
+                        //if (csUnion.length > 1) console.warn("got more than 1 path on union");
+                        // investigate holes
+                        var csUnionHoles = [];
+                        var csUnionOuter = [];
+                        var ctr = 0;
+                        csUnion.forEach(function(path) {
+                            if (ClipperLib.Clipper.Orientation(path)) {
+                                // do nothing.
+                                //console.log("outer path:", path);
+                                csUnionOuter.push(path);
+                            } else {
+                                //console.warn("found a hole:", path);
+                                csUnionHoles.push(path);
+                            }
+                            ctr++;
+                        }, this);
+                        if (csUnionOuter.length > 1) console.warn("got more than 1 outer path");
+                        var mesh = this.createClipperPathsAsMesh(csUnionOuter, 0x00ffff, 0.2, csUnionHoles);
+                        this.sceneAdd(mesh);
+                        this.threePathEndMillArr.push(mesh);
+                    }
+                    //clipperStrokes.push(csUnion[0]);
+                    
+                    
+                    // now subtract the subsequent stroke path from each line so we get
+                    // no overlap
+                    //console.log("subtracting subsequent path from each");
+                    /*
+                    var geo = new THREE.Geometry();
+                    var clipperStrokesDiffed = [];
+                    var geometries = [];
+                    for (var pi = 0; pi < path.length - 1; pi++) {
+                        var cs = clipperStrokes[pi];
+                        var cs2 = (pi + 1 < path.length) ? clipperStrokes[pi + 1] : null;
+                        
+                        if (cs2 != null) {
+                            var clipperStrokeDiff = this.getDiffOfClipperPaths(cs, cs2);
+                            //if (clipperStrokeDiff.length > 1) console.warn("got more than 1 path doing a diff on stroke. should not happen.");
+                            clipperStrokesDiffed.push(clipperStrokeDiff[0]);
+                            var mesh = this.createClipperPathsAsMesh(clipperStrokeDiff, 0x00ffff, 0.2);
+                            //console.log("going to merge mesh:", mesh);
+                            if (mesh instanceof THREE.Object3D) {
+                                // loop thru children
+                                mesh.children.forEach(function(obj) {
+                                    //obj.updateMatrix();
+                                    //geo.merge(obj.geometry);
+                                    
+                                    geometries.push(obj.geometry);
+                                });
+                            } else {
+                                // merge this geometry with previous
+                                //mesh.updateMatrix();
+                                //geo.merge(mesh.geometry);
+                                geometries.push(mesh.geometry);
+                            }
+                            //geo.updateMatrix();
+                            //this.sceneAdd(mesh);
+                        }
+                    }
+                    */
+                    
+                    /*
+                    // we now have all our geometries and we want to merge them for efficiency
+                    // but take the first, then last and work way to middle
+                    for (var gi = 0; gi < 3; gi++) { //geometries.length
+                        
+                        console.log("merging geo:", geo, "geo2:", geometries[gi]);
+                        if (gi == 0) geo = geometries[gi];
+                        else geo.merge(geometries[gi]);
+                        console.log("after merge geo:", geo);
+                        geo.mergeVertices();
+                        console.log("after merge2 geo:", geo);
+                        //geo.merge(geometries[geometries.length - 1 - gi]);
+                    }
+                    var shapeMesh = new THREE.Mesh(geo, mat);
+                    this.sceneAdd(shapeMesh);
+                    */
+                    
+                    // we drew all diffed paths, but the last segment did not get diffed
+                    // so draw that as well
+                    //console.log("drawing last stroke");
+                    /*
+                    var lastStroke = clipperStrokes[clipperStrokes.length - 1];
+                    var mesh = this.createClipperPathsAsMesh(lastStroke, 0x00ffff, 0.2);
+                    this.sceneAdd(mesh);
+                    */
+                    
+                    pathCtr++;
+                }, this);
+                
+                //this.sceneAdd(group);
+                //this.threePathEndMillArr.push(group);
+                //this.threePathDeflatedActualArr.push( group );
+            }
+            
+            // Export Gcode
+            this.paths = paths;
+            setTimeout(this.exportGcode.bind(this), 500);
+            
+            if (callback) {
+                console.log("there was a callback after final drawing of board.");
+                callback();
+            }
+            //console.log("paths:", paths);
+            
+            // fire off the pubsub signal indicating we're done rendering
+            chilipeppr.publish('/' + this.id + '/afterToolPathRender', this);
+
+            console.log("done rendering Eagle BRD");
         },
         getInflatePathWithConstraint: function(paths, inflateBy, constraints) {
             
@@ -4007,15 +5100,10 @@ onAddGcode : function(addGcodeCallback, gcodeParts, eagleWidget, helpDesc){
         draw: function (e) {
             this.eagle.draw();
         },
-        
-        
-        
-        mostRecentSTL: null,
         onDropped: function (data, info) {
             console.log("onDropped. len of file:", data.length, "info:", info);
             // we have the data
             // double check it's a board file, cuz it could be gcode
-            /*
             if (data.match(/<!DOCTYPE eagle SYSTEM "eagle.dtd">/i)) {
 
                 // check that there's a board tag
@@ -4044,34 +5132,6 @@ onAddGcode : function(addGcodeCallback, gcodeParts, eagleWidget, helpDesc){
                 } else {
                     console.log("we do not have an eagle board file. sad.");
                 }
-            }*/
-            if (info.name.match(/.stl$/i)) {
-                //this.loadStlModel (data);
-                if (this.mostRecentSTL == null) {
-                    this.mostRecentSTL = new THREE.Group();
-                }
-                //this.mostRecentSTL = this.parse_3d_file (info, data);
-                var vf_data;
-                vf_data = this.parse_3d_file (info, data);
-                
-                var material=new THREE.MeshLambertMaterial({color:0x909090, overdraw: 1, wireframe: false, shading:THREE.FlatShading, vertexColors: THREE.FaceColors});
-                
-                var geo=new THREE.Geometry;
-				geo.vertices=vf_data.vertices;
-				geo.faces=vf_data.faces;				
-				geo.computeBoundingBox();
-					
-				geo.computeCentroids();
-				geo.computeFaceNormals();
-				geo.computeVertexNormals();
-				THREE.GeometryUtils.center(geo);
-				var mesh = new THREE.Mesh(geo, material);
-
-                
-                this.sceneAdd (mesh);
-            }
-            else {
-                return false;
             }
         },
         onDragOver: function () {
@@ -4226,6 +5286,590 @@ onAddGcode : function(addGcodeCallback, gcodeParts, eagleWidget, helpDesc){
         },
     }
 });
+
+
+var p = function (o) {
+    console.log(o)
+}
+// -----------------------
+// --- ENUMS, DEFAULTS ---
+// -----------------------
+
+EagleCanvas.LayerId = {
+    'BOTTOM_COPPER': 1,
+        'BOTTOM_SILKSCREEN': 2,
+        'BOTTOM_DOCUMENTATION': 3,
+        'DIM_BOARD': 4,
+        'TOP_COPPER': 5,
+        'TOP_SILKSCREEN': 6,
+        'TOP_DOCUMENTATION': 7,
+        'VIAS': 8,
+        'OUTLINE': 9,
+        'PADS': 10
+}
+
+EagleCanvas.LARGE_NUMBER = 99999;
+
+// -------------------
+// --- CONSTRUCTOR ---
+// -------------------
+
+function EagleCanvas(canvasId) {
+    this.canvasId = canvasId;
+
+    this.visibleLayers = {};
+    this.visibleLayers[EagleCanvas.LayerId.BOTTOM_COPPER] = false;
+    this.visibleLayers[EagleCanvas.LayerId.BOTTOM_SILKSCREEN] = false;
+    this.visibleLayers[EagleCanvas.LayerId.BOTTOM_DOCUMENTATION] = false;
+    this.visibleLayers[EagleCanvas.LayerId.DIM_BOARD] = true;
+    this.visibleLayers[EagleCanvas.LayerId.TOP_COPPER] = true;
+    this.visibleLayers[EagleCanvas.LayerId.TOP_SILKSCREEN] = true;
+    this.visibleLayers[EagleCanvas.LayerId.TOP_DOCUMENTATION] = true;
+    this.visibleLayers[EagleCanvas.LayerId.VIAS] = true;
+    //this.visibleLayers[EagleCanvas.LayerId.PADS]                 = true;
+    this.visibleLayers[EagleCanvas.LayerId.OUTLINE] = true;
+
+    this.renderLayerOrder = [];
+    this.renderLayerOrder.push(EagleCanvas.LayerId.BOTTOM_DOCUMENTATION);
+    this.renderLayerOrder.push(EagleCanvas.LayerId.BOTTOM_SILKSCREEN);
+    this.renderLayerOrder.push(EagleCanvas.LayerId.BOTTOM_COPPER);
+    this.renderLayerOrder.push(EagleCanvas.LayerId.DIM_BOARD);
+    this.renderLayerOrder.push(EagleCanvas.LayerId.OUTLINE);
+    this.renderLayerOrder.push(EagleCanvas.LayerId.TOP_COPPER);
+    this.renderLayerOrder.push(EagleCanvas.LayerId.VIAS);
+    //this.renderLayerOrder.push(EagleCanvas.LayerId.PADS);
+    this.renderLayerOrder.push(EagleCanvas.LayerId.TOP_SILKSCREEN);
+    this.renderLayerOrder.push(EagleCanvas.LayerId.TOP_DOCUMENTATION);
+
+    this.reverseRenderLayerOrder = [];
+    this.reverseRenderLayerOrder.push(EagleCanvas.LayerId.TOP_DOCUMENTATION);
+    this.reverseRenderLayerOrder.push(EagleCanvas.LayerId.TOP_SILKSCREEN);
+    this.reverseRenderLayerOrder.push(EagleCanvas.LayerId.TOP_COPPER);
+    this.reverseRenderLayerOrder.push(EagleCanvas.LayerId.DIM_BOARD);
+    this.reverseRenderLayerOrder.push(EagleCanvas.LayerId.OUTLINE);
+    this.reverseRenderLayerOrder.push(EagleCanvas.LayerId.BOTTOM_COPPER);
+    //this.reverseRenderLayerOrder.push(EagleCanvas.LayerId.PADS);
+    this.reverseRenderLayerOrder.push(EagleCanvas.LayerId.VIAS);
+    this.reverseRenderLayerOrder.push(EagleCanvas.LayerId.BOTTOM_SILKSCREEN);
+    this.reverseRenderLayerOrder.push(EagleCanvas.LayerId.BOTTOM_DOCUMENTATION);
+
+    this.layerRenderFunctions = {};
+
+    this.layerRenderFunctions[EagleCanvas.LayerId.BOTTOM_COPPER] = function (that, ctx) {
+        that.drawSignalWires(that.eagleLayersByName['Bottom'], ctx);
+        that.drawElements(that.eagleLayersByName['Bottom'], ctx);
+    }
+
+    this.layerRenderFunctions[EagleCanvas.LayerId.BOTTOM_SILKSCREEN] = function (that, ctx) {
+        that.drawElements(that.eagleLayersByName['bNames'], ctx);
+        that.drawElements(that.eagleLayersByName['bValues'], ctx);
+        that.drawElements(that.eagleLayersByName['bPlace'], ctx);
+    }
+
+    this.layerRenderFunctions[EagleCanvas.LayerId.BOTTOM_DOCUMENTATION] = function (that, ctx) {
+        that.drawElements(that.eagleLayersByName['bKeepout'], ctx);
+        that.drawElements(that.eagleLayersByName['bDocu'], ctx);
+    }
+
+    this.layerRenderFunctions[EagleCanvas.LayerId.TOP_COPPER] = function (that, ctx) {
+        that.drawSignalWires(that.eagleLayersByName['Top'], ctx);
+        that.drawElements(that.eagleLayersByName['Top'], ctx);
+    }
+
+    this.layerRenderFunctions[EagleCanvas.LayerId.TOP_SILKSCREEN] = function (that, ctx) {
+        that.drawElements(that.eagleLayersByName['tNames'], ctx);
+        that.drawElements(that.eagleLayersByName['tValues'], ctx);
+        that.drawElements(that.eagleLayersByName['tPlace'], ctx);
+    }
+
+    this.layerRenderFunctions[EagleCanvas.LayerId.TOP_DOCUMENTATION] = function (that, ctx) {
+        that.drawElements(that.eagleLayersByName['tKeepout'], ctx);
+        that.drawElements(that.eagleLayersByName['tDocu'], ctx);
+    }
+
+    this.layerRenderFunctions[EagleCanvas.LayerId.DIM_BOARD] = function (that, ctx) {
+        that.dimCanvas(ctx, that.dimBoardAlpha);
+    }
+
+    this.layerRenderFunctions[EagleCanvas.LayerId.VIAS] = function (that, ctx) {
+        that.drawSignalVias('1-16', ctx, '#0b0');
+        //that.drawSignalVias('18-18',ctx, '#0b0');
+    }
+
+    this.layerRenderFunctions[EagleCanvas.LayerId.PADS] = function (that, ctx) {
+        that.drawPads(ctx, '#0b0');
+    }
+
+    this.layerRenderFunctions[EagleCanvas.LayerId.OUTLINE] = function (that, ctx) {
+        that.drawPlainWires(that.eagleLayersByName['Dimension'], ctx);
+    }
+
+    this.layerRenderFunctions[EagleCanvas.LayerId.BOTTOM_COPPER] = function (that, ctx) {
+        that.drawSignalWires(that.eagleLayersByName['Bottom'], ctx);
+        that.drawElements(that.eagleLayersByName['Bottom'], ctx);
+    }
+
+
+}
+
+// ---------------
+// --- LOADING ---
+// ---------------
+
+EagleCanvas.prototype.loadURL = function (url, cb) {
+    this.url = url;
+    var request = new XMLHttpRequest(),
+        self = this;
+    // rewrite www.chilipeppr.com url's to i2dcui.appspot.com so we support SSL
+    this.url = this.url.replace(/http\:\/\/www.chilipeppr.com/, "//i2dcui.appspot.com");
+    this.url = this.url.replace(/http\:\/\/chilipeppr.com/, "//i2dcui.appspot.com");
+    this.url = this.url.replace(/\/\/www.chilipeppr.com/, "//i2dcui.appspot.com");
+    this.url = this.url.replace(/\/\/chilipeppr.com/, "//i2dcui.appspot.com");
+
+    request.open('GET', this.url, true);
+    request.onreadystatechange = function () {
+        if (request.readyState == 4) {
+            self.loadText(request.responseText);
+            cb(self)
+        }
+    };
+    request.send(null);
+};
+
+EagleCanvas.prototype.loadText = function (text) {
+    this.text = text;
+    var parser = new DOMParser();
+    this.boardXML = parser.parseFromString(this.text, "text/xml");
+    this.parse();
+    //this.nativeBounds = this.calculateBounds();
+    //this.nativeSize = [this.nativeBounds[2] - this.nativeBounds[0], this.nativeBounds[3] - this.nativeBounds[1]];
+    //this.scaleToFit();
+}
+
+// ---------------
+// --- PARSING ---
+// ---------------
+
+EagleCanvas.prototype.parse = function () {
+    console.group("Eagle Parse");
+    // store by eagle name
+    this.eagleLayersByName = {};
+    // store by eagle number
+    this.layersByNumber = {};
+
+    var layers = this.boardXML.getElementsByTagName('layer');
+    for (var layerIdx = 0; layerIdx < layers.length; layerIdx++) {
+        var layerDict = this.parseLayer(layers[layerIdx]);
+        this.eagleLayersByName[layerDict.name] = layerDict;
+        this.layersByNumber[layerDict.number] = layerDict;
+    }
+
+    this.elements = {};
+    var elements = this.boardXML.getElementsByTagName('element');
+    for (var elementIdx = 0; elementIdx < elements.length; elementIdx++) {
+        var elemDict = this.parseElement(elements[elementIdx])
+        this.elements[elemDict.name] = elemDict;
+    }
+
+    this.signalItems = {};
+    //hashmap signal name -> hashmap layer number -> hashmap 'wires'->wires array, 'vias'->vias array
+    var signals = this.boardXML.getElementsByTagName('signal');
+    for (var sigIdx = 0; sigIdx < signals.length; sigIdx++) {
+        var signal = signals[sigIdx];
+        var name = signal.getAttribute('name');
+        var signalLayers = {};
+        this.signalItems[name] = signalLayers;
+
+        var wires = signal.getElementsByTagName('wire');
+        for (var wireIdx = 0; wireIdx < wires.length; wireIdx++) {
+            var wireDict = this.parseWire(wires[wireIdx]);
+            var layer = wireDict.layer;
+            if (!(signalLayers[layer])) signalLayers[layer] = {};
+            var layerItems = signalLayers[layer];
+            if (!(layerItems['wires'])) layerItems['wires'] = [];
+            var layerWires = layerItems['wires'];
+            layerWires.push(wireDict);
+        }
+
+        var vias = signal.getElementsByTagName('via');
+        for (var viaIdx = 0; viaIdx < vias.length; viaIdx++) {
+            var viaDict = this.parseVia(vias[viaIdx]);
+            var layers = viaDict.layers;
+            if (!(signalLayers[layers])) signalLayers[layers] = {};
+            var layerItems = signalLayers[layers];
+            if (!(layerItems['vias'])) layerItems['vias'] = [];
+            var layerVias = layerItems['vias'];
+            layerVias.push(viaDict);
+        }
+
+
+        var contacts = signal.getElementsByTagName('contactref');
+        for (var contactIdx = 0; contactIdx < contacts.length; contactIdx++) {
+            var contact = contacts[contactIdx];
+            var elemName = contact.getAttribute('element');
+            var padName = contact.getAttribute('pad');
+            var elem = this.elements[elemName];
+            if (elem) {
+                elem.padSignals[padName] = name;
+                // check if @ sign in name cuz then
+                // you have to create a redundant pad signal cuz this is one of
+                // those special Eagle tricks that lets you connect multiple smd
+                // pads to one signal
+                if (padName.match(/@/)) {
+                    padName.match(/(.+)@/);
+                    var newPadName = RegExp.$1;
+                    elem.padSignals[newPadName] = name;
+                }
+            }
+        }
+        
+        // Get polygon pours
+        var polygons = signal.getElementsByTagName('polygon');
+        if (polygons.length > 0)
+            console.log("polygons:", polygons);
+        for (var polyIdx = 0; polyIdx < polygons.length; polyIdx++) {
+            var polygon = polygons[polyIdx];
+            var polyDict = this.parsePoly(polygon);
+            
+            // push this polygon to the layer array, and then the polygons group for
+            // that layer
+            var layer = polyDict.layer;
+            if (!(signalLayers[layer])) signalLayers[layer] = {};
+            var layerItems = signalLayers[layer];
+            if (!(layerItems['polygons'])) layerItems['polygons'] = [];
+            var layerPolys = layerItems['polygons'];
+            layerPolys.push(polyDict);
+        }
+    }
+
+    this.packagesByName = {};
+    var packages = this.boardXML.getElementsByTagName('package');
+    for (var packageIdx = 0; packageIdx < packages.length; packageIdx++) {
+        var pkg = packages[packageIdx];
+        var packageName = pkg.getAttribute('name');
+
+        var packageSmds = [];
+        var smds = pkg.getElementsByTagName('smd');
+        for (var smdIdx = 0; smdIdx < smds.length; smdIdx++) {
+            var smd = smds[smdIdx];
+            packageSmds.push(this.parseSmd(smd));
+        }
+
+        var packagePads = [];
+        var pads = pkg.getElementsByTagName('pad');
+        for (var padIdx = 0; padIdx < pads.length; padIdx++) {
+            var pad = pads[padIdx];
+            packagePads.push(this.parsePad(pad));
+        }
+
+        // need to add rectangles as well
+
+        var packageWires = [];
+        var bbox = [EagleCanvas.LARGE_NUMBER, EagleCanvas.LARGE_NUMBER, -EagleCanvas.LARGE_NUMBER, -EagleCanvas.LARGE_NUMBER];
+        var wires = pkg.getElementsByTagName('wire');
+        for (var wireIdx = 0; wireIdx < wires.length; wireIdx++) {
+            var wire = wires[wireIdx];
+            var wireDict = this.parseWire(wire);
+            if (wireDict.x1 < bbox[0]) {
+                bbox[0] = wireDict.x1;
+            }
+            if (wireDict.x1 > bbox[2]) {
+                bbox[2] = wireDict.x1;
+            }
+            if (wireDict.y1 < bbox[1]) {
+                bbox[1] = wireDict.y1;
+            }
+            if (wireDict.y1 > bbox[3]) {
+                bbox[3] = wireDict.y1;
+            }
+            if (wireDict.x2 < bbox[0]) {
+                bbox[0] = wireDict.x2;
+            }
+            if (wireDict.x2 > bbox[2]) {
+                bbox[2] = wireDict.x2;
+            }
+            if (wireDict.y2 < bbox[1]) {
+                bbox[1] = wireDict.y2;
+            }
+            if (wireDict.y2 > bbox[3]) {
+                bbox[3] = wireDict.y2;
+            }
+            packageWires.push(wireDict);
+        }
+        if ((bbox[0] >= bbox[2]) || (bbox[1] >= bbox[3])) {
+            bbox = null;
+        }
+        var packageTexts = [],
+            texts = pkg.getElementsByTagName('text');
+        for (var textIdx = 0; textIdx < texts.length; textIdx++) {
+            var text = texts[textIdx];
+            packageTexts.push(this.parseText(text));
+        }
+
+        var packageDict = {
+            'pads': packagePads,
+            'smds': packageSmds,
+            'wires': packageWires,
+                'texts': packageTexts,
+            'bbox': bbox,
+            'name' : packageName
+        };
+        this.packagesByName[packageName] = packageDict;
+    }
+
+    this.plainWires = {};
+    var plains = this.boardXML.getElementsByTagName('plain'); //Usually only one
+    for (var plainIdx = 0; plainIdx < plains.length; plainIdx++) {
+        var plain = plains[plainIdx],
+            wires = plain.getElementsByTagName('wire');
+        for (var wireIdx = 0; wireIdx < wires.length; wireIdx++) {
+            var wire = wires[wireIdx],
+                wireDict = this.parseWire(wire),
+                layer = wireDict.layer;
+            if (!this.plainWires[layer]) this.plainWires[layer] = [];
+            this.plainWires[layer].push(wireDict);
+        }
+    }
+
+    console.log("Final objects after parse", this);
+    console.groupEnd();
+}
+
+EagleCanvas.prototype.parseSmd = function (smd) {
+    var smdX = parseFloat(smd.getAttribute('x')),
+        smdY = parseFloat(smd.getAttribute('y')),
+        smdDX = parseFloat(smd.getAttribute('dx')),
+        smdDY = parseFloat(smd.getAttribute('dy'));
+
+    return {
+        'x1': smdX - 0.5 * smdDX,
+        'y1': smdY - 0.5 * smdDY,
+        'x2': smdX + 0.5 * smdDX,
+        'y2': smdY + 0.5 * smdDY,
+        'x': smdX,
+        'y': smdY,
+        'dx': smdDX,
+        'dy': smdDY,
+        'rot': smd.getAttribute('rot'),
+        'name': smd.getAttribute('name'),
+        'layer': smd.getAttribute('layer')
+    };
+}
+
+EagleCanvas.prototype.parseVia = function (via) {
+    return {
+        'x': parseFloat(via.getAttribute('x')),
+        'y': parseFloat(via.getAttribute('y')),
+        'drill': parseFloat(via.getAttribute('drill')),
+        'layers': via.getAttribute('extent'),
+        'shape': via.getAttribute('shape')
+    };
+}
+
+EagleCanvas.prototype.parsePad = function (pad) {
+    // put pads in Top and Bottom layer artificially
+    return {
+        'x': parseFloat(pad.getAttribute('x')),
+        'y': parseFloat(pad.getAttribute('y')),
+        'drill': parseFloat(pad.getAttribute('drill')),
+        'diameter': parseFloat(pad.getAttribute('diameter')),
+        'shape': pad.getAttribute('shape'),
+        'rot': pad.getAttribute('rot'),
+        'name': pad.getAttribute('name')
+    };
+}
+
+EagleCanvas.prototype.parseWire = function (wire) {
+    var width = parseFloat(wire.getAttribute('width'));
+    if (width <= 0.0) width = this.minLineWidth;
+
+    return {
+        'x1': parseFloat(wire.getAttribute('x1')),
+            'y1': parseFloat(wire.getAttribute('y1')),
+            'x2': parseFloat(wire.getAttribute('x2')),
+            'y2': parseFloat(wire.getAttribute('y2')),
+            'width': width,
+            'layer': parseInt(wire.getAttribute('layer'))
+    };
+}
+
+EagleCanvas.prototype.parsePoly = function (poly) {
+    var width = parseFloat(poly.getAttribute('width'));
+    if (width <= 0.0) width = this.minLineWidth;
+
+    // Polygons look like this
+    /*
+    <polygon width="0.254" layer="16" rank="2">
+    <vertex x="0" y="0"/>
+    <vertex x="71.12" y="0"/>
+    <vertex x="71.12" y="54.61"/>
+    <vertex x="0" y="54.61"/>
+    </polygon>
+    */
+    var vertices = [];
+    var vertexElems = poly.getElementsByTagName('vertex');
+    for (var vertIdx = 0; vertIdx < vertexElems.length; vertIdx++) {
+        var vertexElem = vertexElems[vertIdx];
+        var vertex = {
+            x: parseFloat(vertexElem.getAttribute('x')),
+            y: parseFloat(vertexElem.getAttribute('y')),
+            curve: parseFloat(vertexElem.getAttribute('curve'))
+        };
+        vertices.push(vertex);
+    }
+    
+    return {
+        'width': width,
+        'layer': parseInt(poly.getAttribute('layer')),
+        'rank': parseInt(poly.getAttribute('rank')),
+        'thermals': poly.getAttribute('thermals'),
+        'pour': poly.getAttribute('pour'),
+        'vertices': vertices
+    };
+}
+
+EagleCanvas.prototype.parseText = function (text) {
+    var content = text.textContent;
+    if (!content) content = "";
+    return {
+        'x': parseFloat(text.getAttribute('x')),
+            'y': parseFloat(text.getAttribute('y')),
+            'size': parseFloat(text.getAttribute('size')),
+            'layer': parseInt(text.getAttribute('layer')),
+            'font': text.getAttribute('font'),
+            'content': content
+    };
+}
+
+EagleCanvas.prototype.parseElement = function (elem) {
+    var elemRot = elem.getAttribute('rot') || "R0",
+        elemMatrix = this.matrixForRot(elemRot);
+
+    var attribs = {},
+    elemAttribs = elem.getElementsByTagName('attribute');
+    for (var attribIdx = 0; attribIdx < elemAttribs.length; attribIdx++) {
+
+        var elemAttrib = elemAttribs[attribIdx],
+            attribDict = {},
+            name = elemAttrib.getAttribute('name');
+
+        if (name) {
+            attribDict.name = name;
+            if (elemAttrib.getAttribute('x')) {
+                attribDict.x = parseFloat(elemAttrib.getAttribute('x'));
+            }
+            if (elemAttrib.getAttribute('y')) {
+                attribDict.y = parseFloat(elemAttrib.getAttribute('y'));
+            }
+            if (elemAttrib.getAttribute('size')) {
+                attribDict.size = parseFloat(elemAttrib.getAttribute('size'));
+            }
+            if (elemAttrib.getAttribute('layer')) {
+                attribDict.layer = parseInt(elemAttrib.getAttribute('layer'));
+            }
+            attribDict.font = elemAttrib.getAttribute('font');
+
+            var rot = elemAttrib.getAttribute('rot');
+            if (!rot) {
+                rot = "R0";
+            }
+            attribDict.rot = rot;
+            attribs[name] = attribDict;
+        }
+    }
+
+    // since elements can reference packages, lets just get a copy of
+    // the package data as well and stick it in this element
+    var pkgName = elem.getAttribute('package');
+    if (pkgName) {
+        console.log("this element references a pkg. elem:", elem, "pkgName:", pkgName);
+        var pkg = null;
+    }
+
+    return {
+        'pkg': elem.getAttribute('package'),
+            'name': elem.getAttribute('name'),
+            'value': elem.getAttribute('value'),
+            'x': parseFloat(elem.getAttribute('x')),
+            'y': parseFloat(elem.getAttribute('y')),
+            'rot': elemRot,
+            'matrix': elemMatrix,
+            'mirror': elemRot.indexOf('M') == 0,
+            'smashed': elem.getAttribute('smashed') && (elem.getAttribute('smashed').toUpperCase() == 'YES'),
+            'attributes': attribs,
+            'padSignals': {} //to be filled later
+    };
+};
+
+EagleCanvas.prototype.parseLayer = function (layer) {
+    return {
+        'name': layer.getAttribute('name'),
+            'number': parseInt(layer.getAttribute('number')),
+            'color': parseInt(layer.getAttribute('color'))
+    };
+}
+
+// --------------------
+// --- COMMON UTILS ---
+// --------------------
+
+EagleCanvas.prototype.colorPalette = [
+    [0, 0, 0],
+    [35, 35, 141],
+    [35, 141, 35],
+    [35, 141, 141],
+    [141, 35, 35],
+    [141, 35, 141],
+    [141, 141, 35],
+    [141, 141, 141],
+    [39, 39, 39],
+    [0, 0, 180],
+    [0, 180, 0],
+    [0, 180, 180],
+    [180, 0, 0],
+    [180, 0, 180],
+    [180, 180, 0],
+    [180, 180, 180]
+];
+
+EagleCanvas.prototype.layerColor = function (colorIdx) {
+    var rgb = this.colorPalette[colorIdx];
+    return 'rgb(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ')';
+}
+
+EagleCanvas.prototype.matrixForRot = function (rot) {
+    var flipped = (rot.indexOf('M') == 0),
+        degreeString = rot.substring(flipped ? 2 : 1),
+        degrees = parseFloat(degreeString),
+        rad = degrees * Math.PI / 180.0,
+        flipSign = flipped ? -1 : 1,
+        matrix = [flipSign * Math.cos(rad), flipSign * -Math.sin(rad), Math.sin(rad), Math.cos(rad)];
+    return matrix;
+}
+
+EagleCanvas.prototype.mirrorLayer = function (layerIdx) {
+    if (layerIdx == 1) {
+        return 16;
+    } else if (layerIdx == 16) {
+        return 1;
+    }
+    var name = this.layersByNumber[layerIdx].name,
+        prefix = name.substring(0, 1);
+    if (prefix == 't') {
+        var mirrorName = 'b' + name.substring(1),
+            mirrorLayer = this.eagleLayersByName[mirrorName];
+        if (mirrorLayer) {
+            return mirrorLayer.number;
+        }
+    } else if (prefix == 'b') {
+        var mirrorName = 't' + name.substring(1),
+            mirrorLayer = this.eagleLayersByName[mirrorName];
+        if (mirrorLayer) {
+            return mirrorLayer.number;
+        }
+    }
+    return layerIdx;
+}
     //]]>
     </script>
 
